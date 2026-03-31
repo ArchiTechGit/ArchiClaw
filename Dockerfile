@@ -122,6 +122,14 @@ os.chmod(path, 0o600)"
 RUN openclaw doctor --fix > /dev/null 2>&1 || true \
     && openclaw plugins install /opt/nemoclaw > /dev/null 2>&1 || true
 
+
+# Temporary Workaround for Plugins & MCP servers etc.
+# # > /dev/null 2>&1 || true
+RUN openclaw plugins enable msteams > /dev/null 2>&1 || true
+
+# RUN openclaw plugins install @jimiford/webex > /dev/null 2>&1 || true \
+#     && openclaw plugins enable webex > /dev/null 2>&1 || true
+
 # Lock openclaw.json via DAC: chown to root so the sandbox user cannot modify
 # it at runtime.  This works regardless of Landlock enforcement status.
 # The Landlock policy (/sandbox/.openclaw in read_only) provides defense-in-depth
@@ -133,11 +141,20 @@ RUN openclaw doctor --fix > /dev/null 2>&1 || true \
 # (e.g., pointing /sandbox/.openclaw/hooks to an attacker-controlled path).
 # The writable state lives in .openclaw-data, reached via the symlinks.
 # hadolint ignore=DL3002
+# USER root
+# RUN chown root:root /sandbox/.openclaw \
+#     && find /sandbox/.openclaw -mindepth 1 -maxdepth 1 -exec chown -h root:root {} + \
+#     && chmod 755 /sandbox/.openclaw \
+#     && chmod 444 /sandbox/.openclaw/openclaw.json
+
+## https://github.com/NVIDIA/NemoClaw/issues/719
+# hadolint ignore=DL3002
 USER root
-RUN chown root:root /sandbox/.openclaw \
-    && find /sandbox/.openclaw -mindepth 1 -maxdepth 1 -exec chown -h root:root {} + \
+RUN chown sandbox:sandbox /sandbox/.openclaw \
+    && find /sandbox/.openclaw -mindepth 1 -maxdepth 1 -exec chown -h sandbox:sandbox {} + \
     && chmod 755 /sandbox/.openclaw \
-    && chmod 444 /sandbox/.openclaw/openclaw.json
+    && chmod 644 /sandbox/.openclaw/openclaw.json
+
 
 # Pin config hash at build time so the entrypoint can verify integrity.
 # Prevents the agent from creating a copy with a tampered config and
