@@ -156,8 +156,7 @@ RUN chown sandbox:sandbox /sandbox/.openclaw \
     && chmod 644 /sandbox/.openclaw/openclaw.json
 
 ## INSTALL ADDITONAL PLUGINS
-RUN npm install -g @jimiford/webex@0.1.3 \
-    && openclaw plugins install /usr/local/lib/node_modules/\@jimiford/webex/ -l \
+RUN openclaw plugins install @jimiford/webex@0.1.3 \
     && openclaw plugins enable webex > /dev/null 2>&1 || true
 
 # Pin config hash at build time so the entrypoint can verify integrity.
