@@ -122,13 +122,12 @@ os.chmod(path, 0o600)"
 RUN openclaw doctor --fix > /dev/null 2>&1 || true \
     && openclaw plugins install /opt/nemoclaw > /dev/null 2>&1 || true
 
-
 # Temporary Workaround for Plugins & MCP servers etc.
 # # > /dev/null 2>&1 || true
 RUN openclaw plugins enable msteams > /dev/null 2>&1 || true
 
-# RUN openclaw plugins install @jimiford/webex > /dev/null 2>&1 || true \
-#     && openclaw plugins enable webex > /dev/null 2>&1 || true
+RUN openclaw plugins install @jimiford/webex@0.1.3 \
+    && openclaw plugins enable webex > /dev/null 2>&1 || true
 
 # Lock openclaw.json via DAC: chown to root so the sandbox user cannot modify
 # it at runtime.  This works regardless of Landlock enforcement status.
@@ -154,10 +153,6 @@ RUN chown sandbox:sandbox /sandbox/.openclaw \
     && find /sandbox/.openclaw -mindepth 1 -maxdepth 1 -exec chown -h sandbox:sandbox {} + \
     && chmod 755 /sandbox/.openclaw \
     && chmod 644 /sandbox/.openclaw/openclaw.json
-
-## INSTALL ADDITONAL PLUGINS
-RUN openclaw plugins install @jimiford/webex@0.1.3 \
-    && openclaw plugins enable webex > /dev/null 2>&1 || true
 
 # Pin config hash at build time so the entrypoint can verify integrity.
 # Prevents the agent from creating a copy with a tampered config and
