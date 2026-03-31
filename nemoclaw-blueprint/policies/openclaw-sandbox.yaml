@@ -18,7 +18,7 @@ version: 1
 filesystem_policy:
   include_workdir: true
   read_only:
-    - /usr
+    # - /usr
     - /lib
     - /proc
     - /dev/urandom
@@ -35,6 +35,7 @@ filesystem_policy:
     - /tmp
     - /dev/null
     - /sandbox/.openclaw-data       # Writable agent/plugin state (symlinked from .openclaw)
+    - /usr # temp
 
 landlock:
   compatibility: best_effort
