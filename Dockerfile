@@ -21,6 +21,9 @@ RUN npm install && npm run build
 # Stage 2: Runtime image — pull cached base from GHCR
 FROM ${BASE_IMAGE}
 
+# Install additional global libraries
+RUN npm install -g @jimiford/webex@0.1.3
+
 # Harden: remove unnecessary build tools and network probes from base image (#830)
 RUN (apt-get remove --purge -y gcc gcc-12 g++ g++-12 cpp cpp-12 make \
         netcat-openbsd netcat-traditional ncat 2>/dev/null || true) \
@@ -122,11 +125,8 @@ os.chmod(path, 0o600)"
 RUN openclaw doctor --fix > /dev/null 2>&1 || true \
     && openclaw plugins install /opt/nemoclaw > /dev/null 2>&1 || true
 
-# Temporary Workaround for Plugins & MCP servers etc.
-# # > /dev/null 2>&1 || true
-RUN openclaw plugins enable msteams > /dev/null 2>&1 || true
-
-RUN openclaw plugins install @jimiford/webex@0.1.3 \
+# Enable Plugins for Sandbox user before openclaw.json is locked down.
+RUN openclaw plugins enable msteams > /dev/null 2>&1 || true \
     && openclaw plugins enable webex > /dev/null 2>&1 || true
 
 # Lock openclaw.json via DAC: chown to root so the sandbox user cannot modify
