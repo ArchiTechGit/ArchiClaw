@@ -155,6 +155,9 @@ RUN chown sandbox:sandbox /sandbox/.openclaw \
     && chmod 755 /sandbox/.openclaw \
     && chmod 644 /sandbox/.openclaw/openclaw.json
 
+## INSTALL ADDITONAL PLUGINS
+RUN npm install -g @jimiford/webex@0.1.3 \
+    && openclaw plugins enable webex > /dev/null 2>&1 || true
 
 # Pin config hash at build time so the entrypoint can verify integrity.
 # Prevents the agent from creating a copy with a tampered config and
