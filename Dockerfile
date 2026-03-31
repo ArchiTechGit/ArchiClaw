@@ -147,8 +147,8 @@ RUN openclaw plugins enable msteams > /dev/null 2>&1 || true \
 #     && chmod 444 /sandbox/.openclaw/openclaw.json
 
 # ## https://github.com/NVIDIA/NemoClaw/issues/719
-# # hadolint ignore=DL3002
-# USER root
+# hadolint ignore=DL3002
+USER root
 # RUN chown sandbox:sandbox /sandbox/.openclaw \
 #     && find /sandbox/.openclaw -mindepth 1 -maxdepth 1 -exec chown -h sandbox:sandbox {} + \
 #     && chmod 755 /sandbox/.openclaw \
