@@ -26,8 +26,8 @@ FROM ${BASE_IMAGE}
 
 # FIX Extension Direcotory - remove link & re-add
 RUN rm /sandbox/.openclaw/extensions \
-    mkdir -p /sandbox/.openclaw/extensions \
-    chown sandbox:sandbox /sandbox/.openclaw/extensions
+    && mkdir -p /sandbox/.openclaw/extensions \
+    && chown sandbox:sandbox /sandbox/.openclaw/extensions
 
 # Harden: remove unnecessary build tools and network probes from base image (#830)
 RUN (apt-get remove --purge -y gcc gcc-12 g++ g++-12 cpp cpp-12 make \
