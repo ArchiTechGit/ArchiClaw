@@ -146,20 +146,20 @@ RUN openclaw plugins enable msteams > /dev/null 2>&1 || true \
 #     && chmod 755 /sandbox/.openclaw \
 #     && chmod 444 /sandbox/.openclaw/openclaw.json
 
-## https://github.com/NVIDIA/NemoClaw/issues/719
-# hadolint ignore=DL3002
-USER root
-RUN chown sandbox:sandbox /sandbox/.openclaw \
-    && find /sandbox/.openclaw -mindepth 1 -maxdepth 1 -exec chown -h sandbox:sandbox {} + \
-    && chmod 755 /sandbox/.openclaw \
-    && chmod 644 /sandbox/.openclaw/openclaw.json
+# ## https://github.com/NVIDIA/NemoClaw/issues/719
+# # hadolint ignore=DL3002
+# USER root
+# RUN chown sandbox:sandbox /sandbox/.openclaw \
+#     && find /sandbox/.openclaw -mindepth 1 -maxdepth 1 -exec chown -h sandbox:sandbox {} + \
+#     && chmod 755 /sandbox/.openclaw \
+#     && chmod 644 /sandbox/.openclaw/openclaw.json
 
-# Pin config hash at build time so the entrypoint can verify integrity.
-# Prevents the agent from creating a copy with a tampered config and
-# restarting the gateway pointing at it.
-RUN sha256sum /sandbox/.openclaw/openclaw.json > /sandbox/.openclaw/.config-hash \
-    && chmod 444 /sandbox/.openclaw/.config-hash \
-    && chown root:root /sandbox/.openclaw/.config-hash
+# # Pin config hash at build time so the entrypoint can verify integrity.
+# # Prevents the agent from creating a copy with a tampered config and
+# # restarting the gateway pointing at it.
+# RUN sha256sum /sandbox/.openclaw/openclaw.json > /sandbox/.openclaw/.config-hash \
+#     && chmod 444 /sandbox/.openclaw/.config-hash \
+#     && chown root:root /sandbox/.openclaw/.config-hash
 
 # Entrypoint runs as root to start the gateway as the gateway user,
 # then drops to sandbox for agent commands. See nemoclaw-start.sh.
