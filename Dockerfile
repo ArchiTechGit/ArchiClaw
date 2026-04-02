@@ -134,8 +134,9 @@ RUN openclaw doctor --fix > /dev/null 2>&1 || true \
 RUN openclaw plugins enable msteams > /dev/null 2>&1 || true
     # && openclaw plugins enable webex > /dev/null 2>&1 || true
 
-RUN openclaw plugins install @jimiford/webex@0.1.3 > /dev/null 2>&1 || true \
-    && openclaw plugins enable webex > /dev/null 2>&1 || true
+# 2-4-26 - Can't get this work...
+# RUN openclaw plugins install @jimiford/webex@0.1.3 > /dev/null 2>&1 || true \
+#     && openclaw plugins enable webex > /dev/null 2>&1 || true
 
 # Lock openclaw.json via DAC: chown to root so the sandbox user cannot modify
 # it at runtime.  This works regardless of Landlock enforcement status.
