@@ -2,14 +2,30 @@
 # SPDX-License-Identifier: Apache-2.0
 
 preset:
-  name: ngrok
-  description: "ngrok API, tunnels, and managed domains access"
+  name: webex
+  description: "Webex API, identity, and websocket access"
 
 network_policies:
-  ngrok:
-    name: ngrok
+  webex:
+    name: webex
     endpoints:
-      - host: api.ngrok.com
+      - host: wbx2.com
+        port: 443
+        protocol: rest
+        enforcement: enforce
+        tls: terminate
+        rules:
+          - allow: { method: GET, path: "/**" }
+          - allow: { method: POST, path: "/**" }
+      - host: ciscospark.com
+        port: 443
+        protocol: rest
+        enforcement: enforce
+        tls: terminate
+        rules:
+          - allow: { method: GET, path: "/**" }
+          - allow: { method: POST, path: "/**" }
+      - host: webexapis.com
         port: 443
         protocol: rest
         enforcement: enforce
@@ -20,7 +36,7 @@ network_policies:
           - allow: { method: PUT, path: "/**" }
           - allow: { method: PATCH, path: "/**" }
           - allow: { method: DELETE, path: "/**" }
-      - host: "*.ngrok.app"
+      - host: api.ciscospark.com
         port: 443
         protocol: rest
         enforcement: enforce
@@ -28,7 +44,10 @@ network_policies:
         rules:
           - allow: { method: GET, path: "/**" }
           - allow: { method: POST, path: "/**" }
-      - host: "*.ngrok.dev"
+          - allow: { method: PUT, path: "/**" }
+          - allow: { method: PATCH, path: "/**" }
+          - allow: { method: DELETE, path: "/**" }
+      - host: idbroker.webex.com
         port: 443
         protocol: rest
         enforcement: enforce
@@ -36,7 +55,7 @@ network_policies:
         rules:
           - allow: { method: GET, path: "/**" }
           - allow: { method: POST, path: "/**" }
-      - host: "*.ngrok-free.app"
+      - host: "*.webex.com"
         port: 443
         protocol: rest
         enforcement: enforce
@@ -44,7 +63,7 @@ network_policies:
         rules:
           - allow: { method: GET, path: "/**" }
           - allow: { method: POST, path: "/**" }
-      - host: "*.ngrok-free.dev"
+      - host: "*.ciscospark.com"
         port: 443
         protocol: rest
         enforcement: enforce
@@ -52,11 +71,13 @@ network_policies:
         rules:
           - allow: { method: GET, path: "/**" }
           - allow: { method: POST, path: "/**" }
-      # ngrok agent control plane uses a long-lived TLS connection.
-      - host: connect.ngrok-agent.com
+      # Outbound WebSocket sessions are long-lived and should use CONNECT tunnel
+      # semantics to avoid proxy HTTP idle timeout issues.
+      - host: "*.wbx2.com"
+        port: 443
+        access: full
+      - host: "*.webex.com"
         port: 443
         access: full
     binaries:
       - { path: /usr/local/bin/node }
-      - { path: /usr/local/bin/ngrok* }
-      - { path: /usr/bin/ngrok* }
