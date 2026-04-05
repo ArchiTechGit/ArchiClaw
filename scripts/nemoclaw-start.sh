@@ -100,8 +100,8 @@ CHAT_UI_URL="${CHAT_UI_URL:-http://127.0.0.1:18789}"
 PUBLIC_PORT=18789
 OPENCLAW="$(command -v openclaw)" # Resolve once, use absolute path everywhere
 OPENCLAW_BASE_CONFIG="/sandbox/.openclaw/openclaw.json"
-OPENCLAW_RUNTIME_CONFIG="/sandbox/.openclaw/openclaw.runtime.json5"
-OPENCLAW_RUNTIME_OVERLAY="/sandbox/.openclaw/openclaw.runtime.overlay.json5"
+export OPENCLAW_RUNTIME_CONFIG="/sandbox/.openclaw/openclaw.runtime.json5"
+export OPENCLAW_RUNTIME_OVERLAY="/sandbox/.openclaw/openclaw.runtime.overlay.json5"
 
 # ── Config integrity check ──────────────────────────────────────
 # The config hash was pinned at build time. If it doesn't match,
@@ -151,43 +151,9 @@ write_runtime_mcp_config() {
     return
   fi
 
-  export THOUSANDEYES_MCP_URL="${THOUSANDEYES_MCP_URL:-https://api.thousandeyes.com/mcp}"
-
-  cat >"$OPENCLAW_RUNTIME_OVERLAY" <<'EOF'
-{
-  mcp: {
-    servers: {
-      thousandeyes: {
-        url: "${THOUSANDEYES_MCP_URL}",
-        transport: "streamable-http",
-        connectionTimeoutMs: 10000,
-        headers: {
-          Authorization: "Bearer ${THOUSANDEYES_API_TOKEN}",
-        },
-      },
-    },
-  },
-}
-EOF
-
-  cat >"$OPENCLAW_RUNTIME_CONFIG" <<'EOF'
-{
-  $include: [
-    "./openclaw.json",
-    "./openclaw.runtime.overlay.json5",
-  ],
-}
-EOF
-
-  if [ "$(id -u)" -eq 0 ]; then
-    chown root:root "$OPENCLAW_RUNTIME_OVERLAY" "$OPENCLAW_RUNTIME_CONFIG"
-    chmod 644 "$OPENCLAW_RUNTIME_OVERLAY" "$OPENCLAW_RUNTIME_CONFIG"
-  else
-    chmod 600 "$OPENCLAW_RUNTIME_OVERLAY" "$OPENCLAW_RUNTIME_CONFIG"
-  fi
-
-  export OPENCLAW_CONFIG_PATH="$OPENCLAW_RUNTIME_CONFIG"
-  echo "[gateway] ThousandEyes MCP enabled via runtime overlay" >&2
+  echo "[gateway] THOUSANDEYES_API_TOKEN is set, but this OpenClaw version rejects root 'mcp' config keys" >&2
+  echo "[gateway] ThousandEyes MCP overlay disabled to avoid startup failure (Unrecognized key: \"mcp\")" >&2
+  echo "[gateway] Keep THOUSANDEYES_API_TOKEN for future support; no runtime MCP overlay is written" >&2
 }
 
 print_dashboard_urls() {
