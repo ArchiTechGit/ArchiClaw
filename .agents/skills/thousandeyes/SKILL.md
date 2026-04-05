@@ -68,6 +68,8 @@ export MCP_REMOTE_BIN="mcp-remote"                                # optional
 ## Operator Guidelines
 
 - Use only ThousandEyes API v7 semantics and endpoints; do not use v6 or earlier API versions.
+- Always use MCP tools exclusively; never fall back to `curl`, `fetch`, `wget`, or direct HTTP client calls to the ThousandEyes API.
+- If MCP tools are unavailable or return an error, stop and report the failure — do not attempt to replicate the call through any other mechanism.
 - Prefer read-oriented calls first: list tests, list alerts, list events, get details.
 - Use bounded time windows for incident analysis to reduce noise.
 - For performance triage, correlate path visualization with alerts/events before conclusions.
