@@ -21,8 +21,8 @@ RUN npm install && npm run build
 # Stage 2: Runtime image — pull cached base from GHCR
 FROM ${BASE_IMAGE}
 
-# # Install additional global libraries
-# RUN npm install -g @jimiford/webex@0.1.3
+# Install additional global libraries
+RUN npm install -g mcp-remote@latest > /dev/null 2>&1 || true
 
 # FIX Extension Direcotory - remove link & re-add
 RUN rm /sandbox/.openclaw/extensions \
