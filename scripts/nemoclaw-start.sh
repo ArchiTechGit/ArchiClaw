@@ -12,6 +12,9 @@
 # Optional env:
 #   NVIDIA_API_KEY                API key for NVIDIA-hosted inference
 #   CHAT_UI_URL                   Browser origin that will access the forwarded dashboard
+#   THOUSANDEYES_API_TOKEN        Runtime bearer token for the ThousandEyes MCP server
+#   THOUSANDEYES_MCP_URL          Optional ThousandEyes MCP URL override
+#                                 (default: https://api.thousandeyes.com/mcp)
 #   NEMOCLAW_DISABLE_DEVICE_AUTH  Build-time only. Set to "1" to skip device-pairing auth
 #                                 (development/headless). Has no runtime effect — openclaw.json
 #                                 is baked at image build and verified by hash at startup.
@@ -96,6 +99,9 @@ NEMOCLAW_CMD=("$@")
 CHAT_UI_URL="${CHAT_UI_URL:-http://127.0.0.1:18789}"
 PUBLIC_PORT=18789
 OPENCLAW="$(command -v openclaw)" # Resolve once, use absolute path everywhere
+OPENCLAW_BASE_CONFIG="/sandbox/.openclaw/openclaw.json"
+OPENCLAW_RUNTIME_CONFIG="/sandbox/.openclaw/openclaw.runtime.json5"
+OPENCLAW_RUNTIME_OVERLAY="/sandbox/.openclaw/openclaw.runtime.overlay.json5"
 
 # ── Config integrity check ──────────────────────────────────────
 # The config hash was pinned at build time. If it doesn't match,
@@ -110,7 +116,7 @@ verify_config_integrity() {
   if ! (cd /sandbox/.openclaw && sha256sum -c "$hash_file" --status 2>/dev/null); then
     echo "[SECURITY] openclaw.json integrity check FAILED — config may have been tampered with" >&2
     echo "[SECURITY] Expected hash: $(cat "$hash_file")" >&2
-    echo "[SECURITY] Actual hash:   $(sha256sum /sandbox/.openclaw/openclaw.json)" >&2
+    echo "[SECURITY] Actual hash:   $(sha256sum "$OPENCLAW_BASE_CONFIG")" >&2
     return 1
   fi
 }
@@ -135,6 +141,53 @@ json.dump({
 }, open(path, 'w'))
 os.chmod(path, 0o600)
 PYAUTH
+}
+
+write_runtime_mcp_config() {
+  if [ -z "${THOUSANDEYES_API_TOKEN:-}" ]; then
+    if [ -n "${THOUSANDEYES_MCP_URL:-}" ]; then
+      echo "[gateway] THOUSANDEYES_MCP_URL ignored because THOUSANDEYES_API_TOKEN is unset" >&2
+    fi
+    return
+  fi
+
+  export THOUSANDEYES_MCP_URL="${THOUSANDEYES_MCP_URL:-https://api.thousandeyes.com/mcp}"
+
+  cat >"$OPENCLAW_RUNTIME_OVERLAY" <<'EOF'
+{
+  mcp: {
+    servers: {
+      thousandeyes: {
+        url: "${THOUSANDEYES_MCP_URL}",
+        transport: "streamable-http",
+        connectionTimeoutMs: 10000,
+        headers: {
+          Authorization: "Bearer ${THOUSANDEYES_API_TOKEN}",
+        },
+      },
+    },
+  },
+}
+EOF
+
+  cat >"$OPENCLAW_RUNTIME_CONFIG" <<'EOF'
+{
+  $include: [
+    "./openclaw.json",
+    "./openclaw.runtime.overlay.json5",
+  ],
+}
+EOF
+
+  if [ "$(id -u)" -eq 0 ]; then
+    chown root:root "$OPENCLAW_RUNTIME_OVERLAY" "$OPENCLAW_RUNTIME_CONFIG"
+    chmod 644 "$OPENCLAW_RUNTIME_OVERLAY" "$OPENCLAW_RUNTIME_CONFIG"
+  else
+    chmod 600 "$OPENCLAW_RUNTIME_OVERLAY" "$OPENCLAW_RUNTIME_CONFIG"
+  fi
+
+  export OPENCLAW_CONFIG_PATH="$OPENCLAW_RUNTIME_CONFIG"
+  echo "[gateway] ThousandEyes MCP enabled via runtime overlay" >&2
 }
 
 print_dashboard_urls() {
@@ -345,6 +398,7 @@ if [ "$(id -u)" -ne 0 ]; then
     echo "[SECURITY] Config integrity check failed — refusing to start (non-root mode)" >&2
     exit 1
   fi
+  write_runtime_mcp_config
   write_auth_profile
 
   if [ ${#NEMOCLAW_CMD[@]} -gt 0 ]; then
@@ -374,6 +428,7 @@ fi
 
 # Verify config integrity before starting anything
 verify_config_integrity
+write_runtime_mcp_config
 
 # Write auth profile as sandbox user (needs writable .openclaw-data)
 gosu sandbox bash -c "$(declare -f write_auth_profile); write_auth_profile"

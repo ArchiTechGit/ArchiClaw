@@ -7,9 +7,9 @@ import policies from "../bin/lib/policies";
 
 describe("policies", () => {
   describe("listPresets", () => {
-    it("returns all 9 presets", () => {
+    it("returns all current presets", () => {
       const presets = policies.listPresets();
-      expect(presets.length).toBe(9);
+      expect(presets.length).toBe(12);
     });
 
     it("each preset has name and description", () => {
@@ -34,6 +34,9 @@ describe("policies", () => {
         "pypi",
         "slack",
         "telegram",
+        "thousandeyes",
+        "weather",
+        "webex",
       ];
       expect(names).toEqual(expected);
     });

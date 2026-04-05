@@ -128,3 +128,41 @@ describe("nemoclaw-start auto-pair client whitelisting (#117)", () => {
     expect(allowedClientsPos).toBeLessThan(whilePos);
   });
 });
+
+describe("nemoclaw-start ThousandEyes MCP overlay", () => {
+  const src = fs.readFileSync(START_SCRIPT, "utf-8");
+
+  it("documents ThousandEyes runtime env vars in the script header", () => {
+    const header = src.split("set -euo pipefail")[0];
+
+    expect(header).toMatch(/THOUSANDEYES_API_TOKEN/);
+    expect(header).toMatch(/THOUSANDEYES_MCP_URL/);
+  });
+
+  it("generates a runtime wrapper config instead of editing the hashed base config", () => {
+    expect(src).toContain('OPENCLAW_RUNTIME_CONFIG="/sandbox/.openclaw/openclaw.runtime.json5"');
+    expect(src).toContain(
+      'OPENCLAW_RUNTIME_OVERLAY="/sandbox/.openclaw/openclaw.runtime.overlay.json5"',
+    );
+    expect(src).toContain('export OPENCLAW_CONFIG_PATH="$OPENCLAW_RUNTIME_CONFIG"');
+    expect(src).not.toMatch(/openclaw mcp set/);
+  });
+
+  it("writes a ThousandEyes MCP server definition using streamable-http transport", () => {
+    expect(src).toMatch(/thousandeyes:\s*\{/);
+    expect(src).toMatch(/url: "\$\{THOUSANDEYES_MCP_URL\}"/);
+    expect(src).toMatch(/transport: "streamable-http"/);
+    expect(src).toMatch(/Authorization: "Bearer \$\{THOUSANDEYES_API_TOKEN\}"/);
+  });
+
+  it("builds the runtime config as an include overlay on top of openclaw.json", () => {
+    expect(src).toMatch(
+      /\$include: \[\s*"\.\/openclaw\.json",\s*"\.\/openclaw\.runtime\.overlay\.json5"/s,
+    );
+  });
+
+  it("enables the runtime MCP overlay in both root and non-root startup paths", () => {
+    const calls = src.match(/write_runtime_mcp_config/g) || [];
+    expect(calls.length).toBeGreaterThanOrEqual(3); // definition + 2 call sites
+  });
+});
