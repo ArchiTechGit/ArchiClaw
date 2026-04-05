@@ -65,6 +65,7 @@ export MCP_REMOTE_BIN="mcp-remote"                                # optional
 
 ## Operator Guidelines
 
+- Use only ThousandEyes API v7 semantics and endpoints; do not use v6 or earlier API versions.
 - Prefer read-oriented calls first: list tests, list alerts, list events, get details.
 - Use bounded time windows for incident analysis to reduce noise.
 - For performance triage, correlate path visualization with alerts/events before conclusions.
