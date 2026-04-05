@@ -141,7 +141,7 @@ RUN openclaw plugins enable msteams > /dev/null 2>&1 || true
     # && openclaw plugins enable webex > /dev/null 2>&1 || true
 
 # Enable Webex channel plugin
-RUN openclaw plugins install @richwatson/openclaw-webex > /dev/null 2>&1 || true \
+RUN openclaw plugins install @richwats/openclaw-webex > /dev/null 2>&1 || true \
     && openclaw plugins enable webex > /dev/null 2>&1 || true
 
 # Lock openclaw.json via DAC: chown to root so the sandbox user cannot modify
