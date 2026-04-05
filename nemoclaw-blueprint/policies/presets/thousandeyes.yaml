@@ -16,20 +16,6 @@ network_policies:
         tls: terminate
         rules:
           - allow: { method: GET, path: "/**" }
-      - host: www.thousandeyes.com
-        port: 443
-        protocol: rest
-        enforcement: enforce
-        tls: terminate
-        rules:
-          - allow: { method: GET, path: "/**" }
-      - host: docs.thousandeyes.com
-        port: 443
-        protocol: rest
-        enforcement: enforce
-        tls: terminate
-        rules:
-          - allow: { method: GET, path: "/**" }
       - host: developer.cisco.com
         port: 443
         protocol: rest
@@ -44,13 +30,11 @@ network_policies:
         enforcement: enforce
         tls: terminate
         rules:
-          - allow: { method: GET, path: "/mcp/**" }
-          - allow: { method: POST, path: "/mcp/**" }
-          - allow: { method: GET, path: "/v7/**" }
-          - allow: { method: POST, path: "/v7/**" }
-          - allow: { method: PUT, path: "/v7/**" }
-          - allow: { method: PATCH, path: "/v7/**" }
-          - allow: { method: DELETE, path: "/v7/**" }
+          - allow: { method: GET, path: "/**" }
+          - allow: { method: POST, path: "/**" }
+          - allow: { method: PUT, path: "/**" }
+          - allow: { method: PATCH, path: "/**" }
+          - allow: { method: DELETE, path: "/**" }
     binaries:
       - { path: /usr/local/bin/node }
       - { path: /usr/bin/curl }

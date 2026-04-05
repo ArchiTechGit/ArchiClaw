@@ -27,6 +27,7 @@ Example command:
 
 ```bash
 mcp-remote https://api.thousandeyes.com/mcp \
+  --transport http-only \
   --header "Authorization: Bearer ${TE_TOKEN}"
 ```
 
@@ -34,6 +35,7 @@ If `mcp-remote` is not installed globally, use:
 
 ```bash
 npx -y mcp-remote https://api.thousandeyes.com/mcp \
+  --transport http-only \
   --header "Authorization: Bearer ${TE_TOKEN}"
 ```
 
