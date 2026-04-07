@@ -29,6 +29,10 @@ RUN rm /sandbox/.openclaw/extensions \
     && mkdir -p /sandbox/.openclaw/extensions \
     && chown sandbox:sandbox /sandbox/.openclaw/extensions
 
+# Install additional OS packages if needed (none for now, but this is where to add them).
+RUN apt-get update && apt-get install pipx=1.1.0-1 --no-install-recommends -y \
+    && rm -rf /var/lib/apt/lists/*
+
 # Harden: remove unnecessary build tools and network probes from base image (#830)
 RUN (apt-get remove --purge -y gcc gcc-12 g++ g++-12 cpp cpp-12 make \
         netcat-openbsd netcat-traditional ncat 2>/dev/null || true) \
@@ -143,6 +147,10 @@ RUN openclaw plugins enable msteams > /dev/null 2>&1 || true
 # Enable Webex channel plugin
 RUN openclaw plugins install @richwats/webex > /dev/null 2>&1 || true \
     && openclaw plugins enable webex > /dev/null 2>&1 || true
+
+# Install NetBox MCP server locally
+RUN pipx install uv==0.11.3 \
+    && git clone https://github.com/netboxlabs/netbox-mcp-server.git > /dev/null 2>&1 || true
 
 # Lock openclaw.json via DAC: chown to root so the sandbox user cannot modify
 # it at runtime.  This works regardless of Landlock enforcement status.
