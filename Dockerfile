@@ -24,6 +24,14 @@ RUN npm ci && npm run build
 # Stage 2: Runtime image — pull cached base from GHCR
 FROM ${BASE_IMAGE}
 
+# Install additional global libraries
+RUN npm install -g mcp-remote@latest > /dev/null 2>&1 || true
+
+# FIX Extension Direcotory - remove link & re-add
+RUN rm /sandbox/.openclaw/extensions \
+    && mkdir -p /sandbox/.openclaw/extensions \
+    && chown sandbox:sandbox /sandbox/.openclaw/extensions
+
 # Harden: remove unnecessary build tools and network probes from base image (#830)
 RUN (apt-get remove --purge -y gcc gcc-12 g++ g++-12 cpp cpp-12 make \
         netcat-openbsd netcat-traditional ncat 2>/dev/null || true) \
@@ -176,11 +184,11 @@ RUN openclaw doctor --fix > /dev/null 2>&1 || true \
 # The writable state lives in .openclaw-data, reached via the symlinks.
 # hadolint ignore=DL3002
 USER root
-RUN chown root:root /sandbox/.openclaw \
-    && rm -rf /root/.npm /sandbox/.npm \
-    && find /sandbox/.openclaw -mindepth 1 -maxdepth 1 -exec chown -h root:root {} + \
-    && chmod 755 /sandbox/.openclaw \
-    && chmod 444 /sandbox/.openclaw/openclaw.json
+# RUN chown root:root /sandbox/.openclaw \
+#     && rm -rf /root/.npm /sandbox/.npm \
+#     && find /sandbox/.openclaw -mindepth 1 -maxdepth 1 -exec chown -h root:root {} + \
+#     && chmod 755 /sandbox/.openclaw \
+#     && chmod 444 /sandbox/.openclaw/openclaw.json
 
 # Pin config hash at build time so the entrypoint can verify integrity.
 # Prevents the agent from creating a copy with a tampered config and
