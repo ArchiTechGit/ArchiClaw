@@ -1,0 +1,27 @@
+# SPDX-FileCopyrightText: Copyright (c) 2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-License-Identifier: Apache-2.0
+
+preset:
+  name: weather
+  description: "Weather API access via wttr.in over HTTP and HTTPS"
+
+network_policies:
+  weather:
+    name: weather
+    endpoints:
+      - host: wttr.in
+        port: 80
+        protocol: rest
+        enforcement: enforce
+        rules:
+          - allow: { method: GET, path: "/**" }
+      - host: wttr.in
+        port: 443
+        protocol: rest
+        enforcement: enforce
+        tls: terminate
+        rules:
+          - allow: { method: GET, path: "/**" }
+    binaries:
+      - { path: /usr/local/bin/node }
+      - { path: /usr/bin/curl }

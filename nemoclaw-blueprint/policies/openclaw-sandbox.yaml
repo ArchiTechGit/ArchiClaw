@@ -18,7 +18,7 @@ version: 1
 filesystem_policy:
   include_workdir: true
   read_only:
-    - /usr
+    # - /usr
     - /lib
     - /proc
     - /dev/urandom
@@ -31,6 +31,7 @@ filesystem_policy:
                                     # /sandbox/.openclaw-data via symlinks.
                                     # Ref: https://github.com/NVIDIA/NemoClaw/issues/514
   read_write:
+    - /usr # temp
     - /sandbox
     - /tmp
     - /dev/null
@@ -126,6 +127,14 @@ network_policies:
   clawhub:
     name: clawhub
     endpoints:
+      - host: clawhub.ai
+        port: 443
+        protocol: rest
+        enforcement: enforce
+        tls: terminate
+        rules:
+          - allow: { method: GET, path: "/**" }
+          - allow: { method: POST, path: "/**" }
       - host: clawhub.ai
         port: 443
         protocol: rest
