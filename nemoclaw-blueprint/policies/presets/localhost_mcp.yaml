@@ -22,5 +22,6 @@ network_policies:
           - allow: { method: DELETE, path: "/**" }
     binaries:
       - { path: /usr/local/bin/node }
+      - { path: /usr/local/bin/npx }
       - { path: /usr/bin/curl }
       - { path: /usr/local/bin/mcp-remote}
