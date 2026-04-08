@@ -148,9 +148,9 @@ RUN openclaw plugins enable msteams > /dev/null 2>&1 || true
 RUN openclaw plugins install @richwats/webex > /dev/null 2>&1 || true \
     && openclaw plugins enable webex > /dev/null 2>&1 || true
 
-# Install NetBox MCP server locally
-RUN pipx install uv==0.11.3 \
-    && git clone https://github.com/netboxlabs/netbox-mcp-server.git > /dev/null 2>&1 || true
+# # Install NetBox MCP server locally
+# RUN pipx install uv==0.11.3 \
+#     && git clone https://github.com/netboxlabs/netbox-mcp-server.git > /dev/null 2>&1 || true
 
 # Lock openclaw.json via DAC: chown to root so the sandbox user cannot modify
 # it at runtime.  This works regardless of Landlock enforcement status.

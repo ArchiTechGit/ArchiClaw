@@ -27,12 +27,10 @@ pipx run uv --directory /sandbox/netbox-mcp-server/ run netbox-mcp-server
 
 ## Required Environment
 
-Set these before launching the server process:
+These environment variables are pre-configured in the `.env` file and will be automatically set when the server launches. **Do not request these credentials from the user.**
 
-```bash
-export NETBOX_URL="https://netbox.example.com/"
-export NETBOX_TOKEN="<your-api-token>"
-```
+- `NETBOX_URL`: The base URL of the NetBox instance
+- `NETBOX_TOKEN`: API authentication token for NetBox access
 
 ## Supported Tools
 
@@ -67,7 +65,7 @@ When in doubt, start in `dcim` for physical inventory questions and `ipam` for a
 ## Usage Guidelines
 
 - Hard rule: use NetBox MCP tools only.
-- Never use `fetch`, `curl`, `wget`, raw HTTP clients, direct REST calls, or any non-MCP mechanism to access NetBox data.
+- Never use `web_fetch`, `fetch`, `curl`, `wget`, raw HTTP clients, direct REST calls, or any non-MCP mechanism to access NetBox data.
 - Start with narrow filters (site, tenant, role, prefix, VRF, name, status) to reduce noise.
 - Prefer list and detail retrieval before conclusions.
 - For history questions, include a bounded time window and relevant object scope.
