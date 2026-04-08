@@ -26,7 +26,11 @@ RUN npm ci && npm run build
 FROM ${BASE_IMAGE}
 
 # Install additional global libraries
-RUN npm install -g mcp-remote@latest > /dev/null 2>&1 || true
+RUN npm install -g mcp-remote@latest > /dev/null 2>&1 || true \
+    && npm install -g @buape/carbon@latest > /dev/null 2>&1 || true \
+    && npm install -g @larksuiteoapi/node-sdk@latest > /dev/null 2>&1 || true \
+    && npm install -g @slack/web-api@latest > /dev/null 2>&1 || true \
+    && npm install -g grammy@latest > /dev/null 2>&1 || true \
 
 # FIX Extension Direcotory - remove link & re-add
 RUN rm /sandbox/.openclaw/extensions \
