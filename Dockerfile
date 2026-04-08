@@ -38,6 +38,9 @@ RUN (apt-get remove --purge -y gcc gcc-12 g++ g++-12 cpp cpp-12 make \
     && apt-get autoremove --purge -y \
     && rm -rf /var/lib/apt/lists/*
 
+# Install additional OS packages if needed (none for now, but this is where to add them).
+RUN apt-get update && apt-get install pipx=1.1.0-1 --no-install-recommends -y \
+    && rm -rf /var/lib/apt/lists/*
 
 # Copy built plugin and blueprint into the sandbox
 COPY --from=builder /opt/nemoclaw/dist/ /opt/nemoclaw/dist/
