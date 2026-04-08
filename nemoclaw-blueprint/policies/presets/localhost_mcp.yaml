@@ -12,7 +12,14 @@ network_policies:
       # Netbox MCP server endpoint http://host.docker.internal:8000/mcp
       - host: host.docker.internal
         port: 8000
-        access: full
+        protocol: rest
+        enforcement: enforce
+        rules:
+          - allow: { method: GET, path: "/**" }
+          - allow: { method: POST, path: "/**" }
+          - allow: { method: PUT, path: "/**" }
+          - allow: { method: PATCH, path: "/**" }
+          - allow: { method: DELETE, path: "/**" }
     binaries:
       - { path: /usr/local/bin/node }
       - { path: /usr/bin/curl }
