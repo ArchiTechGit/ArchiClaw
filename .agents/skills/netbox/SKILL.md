@@ -43,16 +43,28 @@ curl -s http://host.docker.internal:8000/mcp
 Use `mcp-remote` to bridge the HTTP MCP endpoint for clients that require a local stdio MCP process.
 
 ```bash
-mcp-remote http://host.docker.internal:8000/mcp --transport http-only
+mcp-remote http://host.docker.internal:8000/mcp --transport http-only --allow-http
 ```
 
 If `mcp-remote` is not installed globally:
 
 ```bash
-npx -y mcp-remote http://host.docker.internal:8000/mcp --transport http-only
+npx -y mcp-remote http://host.docker.internal:8000/mcp --transport http-only --allow-http
 ```
 
-No authentication headers are needed. The `--transport http-only` flag prevents `mcp-remote` from attempting an SSE upgrade.
+No authentication headers are needed. The `--transport http-only` flag prevents `mcp-remote` from attempting an SSE upgrade, and `--allow-http` permits the non-TLS local endpoint.
+
+## Tools
+
+| Tool | Description |
+| --- | --- |
+| `get_objects` | Retrieves NetBox core objects based on their type and filters. |
+| `get_object_by_id` | Gets detailed information about a specific NetBox object by its ID. |
+| `get_changelogs` | Retrieves change history records (audit trail) based on filters. |
+
+Note: the set of supported object types is explicitly defined and limited to the core NetBox objects for now, and won't work with object types from plugins.
+
+No other tools are available, and direct REST calls to the NetBox API outside of these tools are not possible.
 
 ## Operator Guidelines
 
