@@ -20,6 +20,16 @@ network_policies:
           - allow: { method: PUT, path: "/**" }
           - allow: { method: PATCH, path: "/**" }
           - allow: { method: DELETE, path: "/**" }
+      - host: 172.17.0.1
+        port: 8000
+        protocol: rest
+        enforcement: enforce
+        rules:
+          - allow: { method: GET, path: "/**" }
+          - allow: { method: POST, path: "/**" }
+          - allow: { method: PUT, path: "/**" }
+          - allow: { method: PATCH, path: "/**" }
+          - allow: { method: DELETE, path: "/**" }
     binaries:
       - { path: /usr/local/bin/node }
       - { path: /usr/local/bin/npx }
