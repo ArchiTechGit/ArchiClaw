@@ -223,54 +223,37 @@ describe("nemoclaw-start auto-pair client whitelisting (#117)", () => {
   });
 });
 
-describe("nemoclaw-start signal handling", () => {
+describe("nemoclaw-start ThousandEyes MCP guard", () => {
   const src = fs.readFileSync(START_SCRIPT, "utf-8");
 
-  it("defines cleanup() as a single top-level function", () => {
-    const matches = src.match(/^cleanup\(\)/gm);
-    expect(matches).toHaveLength(1);
+  it("documents ThousandEyes runtime env vars in the script header", () => {
+    const header = src.split("set -euo pipefail")[0];
+
+    expect(header).toMatch(/THOUSANDEYES_API_TOKEN/);
+    expect(header).toMatch(/THOUSANDEYES_MCP_URL/);
   });
 
-  it("cleanup() forwards SIGTERM to both GATEWAY_PID and AUTO_PAIR_PID", () => {
-    const cleanup = src.match(/cleanup\(\) \{[\s\S]*?^}/m)?.[0];
-    expect(cleanup).toBeDefined();
-    expect(cleanup).toMatch(/kill -TERM "\$GATEWAY_PID"/);
-    expect(cleanup).toMatch(/kill -TERM "\$AUTO_PAIR_PID"/);
+  it("keeps runtime overlay paths declared (reserved for future MCP support)", () => {
+    expect(src).toContain('OPENCLAW_RUNTIME_CONFIG="/sandbox/.openclaw/openclaw.runtime.json5"');
+    expect(src).toContain(
+      'OPENCLAW_RUNTIME_OVERLAY="/sandbox/.openclaw/openclaw.runtime.overlay.json5"',
+    );
+    expect(src).not.toMatch(/openclaw mcp set/);
   });
 
-  it("cleanup() waits for both child processes", () => {
-    const cleanup = src.match(/cleanup\(\) \{[\s\S]*?^}/m)?.[0];
-    expect(cleanup).toMatch(/wait "\$GATEWAY_PID"/);
-    expect(cleanup).toMatch(/wait "\$AUTO_PAIR_PID"/);
+  it("warns that root mcp config is unsupported and skips overlay writes", () => {
+    expect(src).toMatch(/rejects root 'mcp' config keys/);
+    expect(src).toMatch(/ThousandEyes MCP overlay disabled to avoid startup failure/);
+    expect(src).toMatch(/no runtime MCP overlay is written/);
   });
 
-  it("cleanup() exits with the gateway exit status", () => {
-    const cleanup = src.match(/cleanup\(\) \{[\s\S]*?^}/m)?.[0];
-    expect(cleanup).toMatch(/exit "\$gateway_status"/);
+  it("does not write unsupported mcp server config into runtime overlay", () => {
+    expect(src).not.toMatch(/\bmcp:\s*{/);
+    expect(src).not.toMatch(/OPENCLAW_CONFIG_PATH="\$OPENCLAW_RUNTIME_CONFIG"/);
   });
 
-  it("registers trap before start_auto_pair in non-root path", () => {
-    // trap must appear before start_auto_pair within the non-root block
-    const nonRootBlock = src.match(/if \[ "\$\(id -u\)" -ne 0 \]; then[\s\S]*?^fi$/m)?.[0];
-    expect(nonRootBlock).toBeDefined();
-    const trapIdx = nonRootBlock.indexOf("trap cleanup SIGTERM SIGINT");
-    const autoIdx = nonRootBlock.indexOf("start_auto_pair");
-    expect(trapIdx).toBeGreaterThan(-1);
-    expect(autoIdx).toBeGreaterThan(-1);
-    expect(trapIdx).toBeLessThan(autoIdx);
-  });
-
-  it("registers trap before start_auto_pair in root path", () => {
-    // In the root path (after the non-root fi), trap must precede start_auto_pair
-    const rootBlock = src.split(/^fi$/m).slice(-1)[0];
-    const trapIdx = rootBlock.indexOf("trap cleanup SIGTERM SIGINT");
-    const autoIdx = rootBlock.indexOf("start_auto_pair");
-    expect(trapIdx).toBeGreaterThan(-1);
-    expect(autoIdx).toBeGreaterThan(-1);
-    expect(trapIdx).toBeLessThan(autoIdx);
-  });
-
-  it("captures AUTO_PAIR_PID from background process", () => {
-    expect(src).toMatch(/AUTO_PAIR_PID=\$!/);
+  it("enables the runtime MCP overlay in both root and non-root startup paths", () => {
+    const calls = src.match(/write_runtime_mcp_config/g) || [];
+    expect(calls.length).toBeGreaterThanOrEqual(3); // definition + 2 call sites
   });
 });

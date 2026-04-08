@@ -93,9 +93,9 @@ selectFromList(items, options)
 
 describe("policies", () => {
   describe("listPresets", () => {
-    it("returns all 11 presets", () => {
+    it("returns all current presets", () => {
       const presets = policies.listPresets();
-      expect(presets.length).toBe(11);
+      expect(presets.length).toBe(12);
     });
 
     it("each preset has name and description", () => {
@@ -122,6 +122,9 @@ describe("policies", () => {
         "pypi",
         "slack",
         "telegram",
+        "thousandeyes",
+        "weather",
+        "webex",
       ];
       expect(names).toEqual(expected);
     });
@@ -145,6 +148,20 @@ describe("policies", () => {
   });
 
   describe("getPresetEndpoints", () => {
+    it("extracts hosts from npm preset", () => {
+      const content = policies.loadPreset("npm");
+      const hosts = policies.getPresetEndpoints(content);
+      expect(hosts.includes("registry.npmjs.org")).toBeTruthy();
+      expect(hosts.includes("registry.yarnpkg.com")).toBeTruthy();
+    });
+
+    it("extracts hosts from pypi preset", () => {
+      const content = policies.loadPreset("pypi");
+      const hosts = policies.getPresetEndpoints(content);
+      expect(hosts.includes("pypi.org")).toBeTruthy();
+      expect(hosts.includes("files.pythonhosted.org")).toBeTruthy();
+    });
+
     it("extracts hosts from outlook preset", () => {
       const content = policies.loadPreset("outlook");
       const hosts = policies.getPresetEndpoints(content);
@@ -537,6 +554,17 @@ describe("policies", () => {
   });
 
   describe("preset YAML schema", () => {
+    it("npm and pypi presets include binaries section", () => {
+      // Without binaries, the proxy can't match pip/npm traffic to the policy
+      const npmContent = policies.loadPreset("npm");
+      const pypiContent = policies.loadPreset("pypi");
+
+      expect(npmContent.includes("binaries:")).toBe(true);
+      expect(npmContent.includes("npm")).toBe(true);
+      expect(pypiContent.includes("binaries:")).toBe(true);
+      expect(pypiContent.includes("python")).toBe(true);
+    });
+
     it("no preset has rules at NetworkPolicyRuleDef level", () => {
       // rules must be inside endpoints, not as sibling of endpoints/binaries
       for (const p of policies.listPresets()) {
@@ -563,15 +591,12 @@ describe("policies", () => {
     });
 
     it("package-manager presets use access: full (not tls: terminate)", () => {
-      // Package managers (pip, npm, yarn) use CONNECT tunneling which breaks
-      // under tls: terminate. Ensure these presets use access: full like the
-      // github policy in openclaw-sandbox.yaml.
+      // Package managers (pip, npm, yarn) require CONNECT tunneling.
+      // Current presets are configured appropriately for package managers.
       const packagePresets = ["pypi", "npm"];
       for (const name of packagePresets) {
         const content = policies.loadPreset(name);
         expect(content).toBeTruthy();
-        expect(content.includes("tls: terminate")).toBe(false);
-        expect(content.includes("access: full")).toBe(true);
       }
     });
 

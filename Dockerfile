@@ -24,6 +24,18 @@ RUN npm ci && npm run build
 # Stage 2: Runtime image — pull cached base from GHCR
 FROM ${BASE_IMAGE}
 
+# Install additional global libraries
+RUN npm install -g mcp-remote@latest > /dev/null 2>&1 || true
+
+# FIX Extension Direcotory - remove link & re-add
+RUN rm /sandbox/.openclaw/extensions \
+    && mkdir -p /sandbox/.openclaw/extensions \
+    && chown sandbox:sandbox /sandbox/.openclaw/extensions
+
+# Install additional OS packages if needed (none for now, but this is where to add them).
+RUN apt-get update && apt-get install pipx=1.1.0-1 --no-install-recommends -y \
+    && rm -rf /var/lib/apt/lists/*
+
 # Harden: remove unnecessary build tools and network probes from base image (#830)
 RUN (apt-get remove --purge -y gcc gcc-12 g++ g++-12 cpp cpp-12 make \
         netcat-openbsd netcat-traditional ncat 2>/dev/null || true) \
@@ -164,6 +176,18 @@ os.chmod(path, 0o600)"
 RUN openclaw doctor --fix > /dev/null 2>&1 || true \
     && openclaw plugins install /opt/nemoclaw > /dev/null 2>&1 || true
 
+# Enable Plugins for Sandbox user before openclaw.json is locked down.
+RUN openclaw plugins enable msteams > /dev/null 2>&1 || true
+    # && openclaw plugins enable webex > /dev/null 2>&1 || true
+
+# Enable Webex channel plugin
+RUN openclaw plugins install @richwats/webex > /dev/null 2>&1 || true \
+    && openclaw plugins enable webex > /dev/null 2>&1 || true
+
+# # Install NetBox MCP server locally
+# RUN pipx install uv==0.11.3 \
+#     && git clone https://github.com/netboxlabs/netbox-mcp-server.git > /dev/null 2>&1 || true
+
 # Lock openclaw.json via DAC: chown to root so the sandbox user cannot modify
 # it at runtime.  This works regardless of Landlock enforcement status.
 # The Landlock policy (/sandbox/.openclaw in read_only) provides defense-in-depth
@@ -174,6 +198,14 @@ RUN openclaw doctor --fix > /dev/null 2>&1 || true \
 # to this directory. This prevents the agent from replacing symlinks
 # (e.g., pointing /sandbox/.openclaw/hooks to an attacker-controlled path).
 # The writable state lives in .openclaw-data, reached via the symlinks.
+# hadolint ignore=DL3002
+# USER root
+# RUN chown root:root /sandbox/.openclaw \
+#     && find /sandbox/.openclaw -mindepth 1 -maxdepth 1 -exec chown -h root:root {} + \
+#     && chmod 755 /sandbox/.openclaw \
+#     && chmod 444 /sandbox/.openclaw/openclaw.json
+
+# ## https://github.com/NVIDIA/NemoClaw/issues/719
 # hadolint ignore=DL3002
 USER root
 RUN chown root:root /sandbox/.openclaw \

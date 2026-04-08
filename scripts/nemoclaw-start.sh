@@ -12,6 +12,9 @@
 # Optional env:
 #   NVIDIA_API_KEY                API key for NVIDIA-hosted inference
 #   CHAT_UI_URL                   Browser origin that will access the forwarded dashboard
+#   THOUSANDEYES_API_TOKEN        Runtime bearer token for the ThousandEyes MCP server
+#   THOUSANDEYES_MCP_URL          Optional ThousandEyes MCP URL override
+#                                 (default: https://api.thousandeyes.com/mcp)
 #   NEMOCLAW_DISABLE_DEVICE_AUTH  Build-time only. Set to "1" to skip device-pairing auth
 #                                 (development/headless). Has no runtime effect — openclaw.json
 #                                 is baked at image build and verified by hash at startup.
@@ -96,6 +99,9 @@ NEMOCLAW_CMD=("$@")
 CHAT_UI_URL="${CHAT_UI_URL:-http://127.0.0.1:18789}"
 PUBLIC_PORT=18789
 OPENCLAW="$(command -v openclaw)" # Resolve once, use absolute path everywhere
+OPENCLAW_BASE_CONFIG="/sandbox/.openclaw/openclaw.json"
+export OPENCLAW_RUNTIME_CONFIG="/sandbox/.openclaw/openclaw.runtime.json5"
+export OPENCLAW_RUNTIME_OVERLAY="/sandbox/.openclaw/openclaw.runtime.overlay.json5"
 
 # ── Config integrity check ──────────────────────────────────────
 # The config hash was pinned at build time. If it doesn't match,
@@ -110,7 +116,7 @@ verify_config_integrity() {
   if ! (cd /sandbox/.openclaw && sha256sum -c "$hash_file" --status 2>/dev/null); then
     echo "[SECURITY] openclaw.json integrity check FAILED — config may have been tampered with" >&2
     echo "[SECURITY] Expected hash: $(cat "$hash_file")" >&2
-    echo "[SECURITY] Actual hash:   $(sha256sum /sandbox/.openclaw/openclaw.json)" >&2
+    echo "[SECURITY] Actual hash:   $(sha256sum "$OPENCLAW_BASE_CONFIG")" >&2
     return 1
   fi
 }
@@ -289,26 +295,19 @@ os.chmod(path, 0o600)
 PYAUTH
 }
 
-configure_messaging_channels() {
-  # Channel entries are baked into openclaw.json at image build time via
-  # NEMOCLAW_MESSAGING_CHANNELS_B64 (see Dockerfile). Placeholder tokens
-  # (openshell:resolve:env:*) flow through to API calls where the L7 proxy
-  # rewrites them with real secrets at egress. Real tokens are never visible
-  # inside the sandbox.
-  #
-  # Runtime patching of /sandbox/.openclaw/openclaw.json is not possible:
-  # Landlock enforces read-only on /sandbox/.openclaw/ at the kernel level,
-  # regardless of DAC (file ownership/chmod). Writes fail with EPERM.
-  [ -n "${TELEGRAM_BOT_TOKEN:-}" ] || [ -n "${DISCORD_BOT_TOKEN:-}" ] || [ -n "${SLACK_BOT_TOKEN:-}" ] || return 0
+write_runtime_mcp_config() {
+  if [ -z "${THOUSANDEYES_API_TOKEN:-}" ]; then
+    if [ -n "${THOUSANDEYES_MCP_URL:-}" ]; then
+      echo "[gateway] THOUSANDEYES_MCP_URL ignored because THOUSANDEYES_API_TOKEN is unset" >&2
+    fi
+    return
+  fi
 
-  echo "[channels] Messaging channels active (baked at build time):" >&2
-  [ -n "${TELEGRAM_BOT_TOKEN:-}" ] && echo "[channels]   telegram (native)" >&2
-  [ -n "${DISCORD_BOT_TOKEN:-}" ] && echo "[channels]   discord (native)" >&2
-  [ -n "${SLACK_BOT_TOKEN:-}" ] && echo "[channels]   slack (native)" >&2
-  return 0
+  echo "[gateway] THOUSANDEYES_API_TOKEN is set, but this OpenClaw version rejects root 'mcp' config keys" >&2
+  echo "[gateway] ThousandEyes MCP overlay disabled to avoid startup failure (Unrecognized key: \"mcp\")" >&2
+  echo "[gateway] Keep THOUSANDEYES_API_TOKEN for future support; no runtime MCP overlay is written" >&2
 }
 
-# Print the local and remote dashboard URLs, appending the auth token if available.
 print_dashboard_urls() {
   local token chat_ui_base local_url remote_url
 
@@ -522,71 +521,7 @@ if [ "$(id -u)" -ne 0 ]; then
     echo "[SECURITY] Config integrity check failed — refusing to start (non-root mode)" >&2
     exit 1
   fi
-  export_gateway_token
-  install_configure_guard
-  configure_messaging_channels
-  validate_openclaw_symlinks
-
-  # Ensure writable state directories exist and are owned by the current user.
-  # The Docker build (Dockerfile) sets this up correctly, but the native curl
-  # installer may create these directories as root, causing EACCES when openclaw
-  # tries to write device-auth.json or other state files.  Ref: #692
-  # Ensure the identity symlink points from .openclaw/identity → .openclaw-data/identity.
-  # Uses early returns to keep each case flat.
-  ensure_identity_symlink() {
-    local data_dir="$1" openclaw_dir="$2"
-    local link_path="${openclaw_dir}/identity"
-    local target="${data_dir}/identity"
-    [ -d "$target" ] || return 0
-    mkdir -p "${openclaw_dir}" 2>/dev/null || true
-
-    # Already a correct symlink — nothing to do.
-    if [ -L "$link_path" ]; then
-      local current expected
-      current="$(readlink -f "$link_path" 2>/dev/null || true)"
-      expected="$(readlink -f "$target" 2>/dev/null || true)"
-      [ "$current" != "$expected" ] || return 0
-      ln -snf "$target" "$link_path" 2>/dev/null \
-        && echo "[setup] repaired identity symlink" >&2 \
-        || echo "[setup] could not repair identity symlink" >&2
-      return 0
-    fi
-
-    # Nothing exists yet — create the symlink.
-    if [ ! -e "$link_path" ]; then
-      ln -snf "$target" "$link_path" 2>/dev/null \
-        && echo "[setup] created identity symlink" >&2 \
-        || echo "[setup] could not create identity symlink" >&2
-      return 0
-    fi
-
-    # A non-symlink entry exists — back it up, then replace.
-    local backup
-    backup="${link_path}.bak.$(date +%s)"
-    if mv "$link_path" "$backup" 2>/dev/null \
-      && ln -snf "$target" "$link_path" 2>/dev/null; then
-      echo "[setup] replaced non-symlink identity path (backup: ${backup})" >&2
-    else
-      echo "[setup] could not replace ${link_path}; writes may fail" >&2
-    fi
-  }
-
-  fix_openclaw_data_ownership() {
-    local data_dir="${HOME}/.openclaw-data"
-    local openclaw_dir="${HOME}/.openclaw"
-    [ -d "$data_dir" ] || return 0
-    local subdirs="agents/main/agent extensions workspace skills hooks identity devices canvas cron"
-    for sub in $subdirs; do
-      mkdir -p "${data_dir}/${sub}" 2>/dev/null || true
-    done
-    if find "$data_dir" ! -uid "$(id -u)" -print -quit 2>/dev/null | grep -q .; then
-      chown -R "$(id -u):$(id -g)" "$data_dir" 2>/dev/null \
-        && echo "[setup] fixed ownership on ${data_dir}" >&2 \
-        || echo "[setup] could not fix ownership on ${data_dir}; writes may fail" >&2
-    fi
-    ensure_identity_symlink "$data_dir" "$openclaw_dir"
-  }
-  fix_openclaw_data_ownership
+  write_runtime_mcp_config
   write_auth_profile
 
   if [ ${#NEMOCLAW_CMD[@]} -gt 0 ]; then
@@ -618,13 +553,7 @@ fi
 
 # Verify config integrity before starting anything
 verify_config_integrity
-export_gateway_token
-install_configure_guard
-
-# Inject messaging channel config if provider tokens are present.
-# Must run AFTER integrity check (to detect build-time tampering) and
-# BEFORE chattr +i (which locks the config permanently).
-configure_messaging_channels
+write_runtime_mcp_config
 
 # Write auth profile as sandbox user (needs writable .openclaw-data)
 gosu sandbox bash -c "$(declare -f write_auth_profile); write_auth_profile"
