@@ -66,7 +66,8 @@ When in doubt, start in `dcim` for physical inventory questions and `ipam` for a
 
 ## Usage Guidelines
 
-- Use MCP tools only. Do not bypass the server with direct REST calls from the agent.
+- Hard rule: use NetBox MCP tools only.
+- Never use `fetch`, `curl`, `wget`, raw HTTP clients, direct REST calls, or any non-MCP mechanism to access NetBox data.
 - Start with narrow filters (site, tenant, role, prefix, VRF, name, status) to reduce noise.
 - Prefer list and detail retrieval before conclusions.
 - For history questions, include a bounded time window and relevant object scope.
