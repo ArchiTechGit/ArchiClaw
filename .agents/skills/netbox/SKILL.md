@@ -14,53 +14,45 @@ Use this skill when users need source-of-truth data from NetBox, including devic
 ## NetBox MCP Service Model
 
 - NetBox itself is the source-of-truth platform and exposes a REST API.
-- This skill targets a local, read-only MCP server pattern using `netbox-mcp-server`.
-- The default transport is local `stdio`, launched through `uv` from a local clone of the server project.
+- This skill targets a local, read-only MCP server running HTTP transport at `host.docker.internal:8000/mcp`.
 - The server exposes read-oriented tools such as `get_objects`, `get_object_by_id`, and `get_changelogs`.
-- Authentication is provided through `NETBOX_URL` and `NETBOX_TOKEN`.
-
-If the workspace or runtime already defines a NetBox MCP server, use that configuration rather than inventing a new launcher.
+- No authentication is required to connect to the MCP endpoint.
 
 ## Typical Configuration
 
-### Required
+No configuration is required to connect. The MCP server is available at `http://host.docker.internal:8000/mcp` by default.
 
-- `NETBOX_URL`: Base URL for the NetBox instance, for example `https://netbox.example.com`.
-- `NETBOX_TOKEN`: NetBox API token used by the MCP service.
+## MCP Endpoint
 
-### Optional
+The NetBox MCP server is available at:
 
-- `TRANSPORT`: MCP transport protocol. Default is `stdio`.
-- `HOST`: Host address for HTTP mode. Only relevant when `TRANSPORT=http`.
-- `PORT`: TCP port for HTTP mode. Only relevant when `TRANSPORT=http`.
-- `VERIFY_SSL`: Whether to verify TLS certificates. Default is `true`.
-- `LOG_LEVEL`: Logging verbosity. Common values include `DEBUG`, `INFO`, `WARNING`, `ERROR`, and `CRITICAL`.
-
-## Example Invocation Patterns
-
-Launch the NetBox MCP server using `pipx` and `uv`.
-
-### Local stdio server with uv
-
-```bash
-export NETBOX_URL="https://netbox.example.com"
-export NETBOX_TOKEN="<your_netbox_token>"
-export NETBOX_MCP_DIR="/sandbox/netbox-mcp-server"
-
-pipx run uv --directory "${NETBOX_MCP_DIR}" run netbox-mcp-server
+```text
+http://host.docker.internal:8000/mcp
 ```
 
-### Direct verification
+No authentication token or headers are needed. Connect your MCP client directly to this endpoint.
+
+### Verify the server is reachable
 
 ```bash
-export NETBOX_URL="https://netbox.example.com"
-export NETBOX_TOKEN="<your_netbox_token>"
-export NETBOX_MCP_DIR="/sandbox/netbox-mcp-server"
-
-NETBOX_URL="${NETBOX_URL}" \
-NETBOX_TOKEN="${NETBOX_TOKEN}" \
-pipx run uv --directory "${NETBOX_MCP_DIR}" run netbox-mcp-server
+curl -s http://host.docker.internal:8000/mcp
 ```
+
+## Connecting with mcp-remote
+
+Use `mcp-remote` to bridge the HTTP MCP endpoint for clients that require a local stdio MCP process.
+
+```bash
+mcp-remote http://host.docker.internal:8000/mcp --transport http-only
+```
+
+If `mcp-remote` is not installed globally:
+
+```bash
+npx -y mcp-remote http://host.docker.internal:8000/mcp --transport http-only
+```
+
+No authentication headers are needed. The `--transport http-only` flag prevents `mcp-remote` from attempting an SSE upgrade.
 
 ## Operator Guidelines
 
