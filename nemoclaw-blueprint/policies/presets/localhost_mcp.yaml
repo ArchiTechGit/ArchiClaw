@@ -1,0 +1,17 @@
+# SPDX-FileCopyrightText: Copyright (c) 2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-License-Identifier: Apache-2.0
+
+preset:
+  name: localhost_mcp
+  description: "Localhost MCP server access, including NetBox"
+
+network_policies:
+  localhost_mcp:
+    name: localhost_mcp
+    endpoints:
+      # Netbox MCP server endpoint http://host.docker.internal:8000/mcp
+      - host: host.docker.internal
+        port: 8000
+        access: full
+    binaries:
+      - { path: /usr/local/bin/mcp-remote}
