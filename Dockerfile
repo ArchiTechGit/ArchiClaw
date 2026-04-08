@@ -172,6 +172,13 @@ os.chmod(path, 0o600)"
 RUN openclaw doctor --fix > /dev/null 2>&1 || true \
     && openclaw plugins install /opt/nemoclaw > /dev/null 2>&1 || true
 
+# Enable Plugins for Sandbox user before openclaw.json is locked down.
+RUN openclaw plugins enable msteams > /dev/null 2>&1 || true
+
+# Enable Webex channel plugin
+RUN openclaw plugins install @richwats/webex > /dev/null 2>&1 || true \
+    && openclaw plugins enable webex > /dev/null 2>&1 || true
+
 # Lock openclaw.json via DAC: chown to root so the sandbox user cannot modify
 # it at runtime.  This works regardless of Landlock enforcement status.
 # The Landlock policy (/sandbox/.openclaw in read_only) provides defense-in-depth
