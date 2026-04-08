@@ -1,117 +1,100 @@
 ---
 name: netbox
-description: NetBox skill for interacting with a NetBox MCP service for DCIM and IPAM inventory, device lookup, interface state, prefixes, IP addresses, VLANs, racks, and tenancy data. Use when users need network source-of-truth data from NetBox through MCP tools.
+description: NetBox MCP skill for read-only DCIM and IPAM access using the official netboxlabs/netbox-mcp-server via local stdio transport.
 version: 1.0.0
-tags: [netbox, mcp, dcim, ipam, network-automation, inventory, addressing]
+tags: [netbox, mcp, dcim, ipam, network-automation, inventory, changelog]
 ---
 
-# NetBox
+# NetBox MCP Server
 
 ## Purpose
 
-Use this skill when users need source-of-truth data from NetBox, including device inventory, sites, racks, interfaces, cables, IP addresses, prefixes, VLANs, circuits, contacts, and tenancy relationships.
+Use this skill when users need to query NetBox source-of-truth data through MCP tools, including inventory lookups, IPAM exploration, and change history analysis.
 
-## NetBox MCP Service Model
+## Reference Implementation
 
-- NetBox itself is the source-of-truth platform and exposes a REST API.
-- This skill targets a local, read-only MCP server running HTTP transport at `host.docker.internal:8000/mcp`.
-- The server exposes read-oriented tools such as `get_objects`, `get_object_by_id`, and `get_changelogs`.
-- No authentication is required to connect to the MCP endpoint.
+- GitHub repository: [netboxlabs/netbox-mcp-server](https://github.com/netboxlabs/netbox-mcp-server)
+- Service model: local MCP server over stdio
+- Data access model: read-only
 
-## Typical Configuration
+## Local Launch Command
 
-No configuration is required to connect. The MCP server is available at `http://host.docker.internal:8000/mcp` by default.
-
-## MCP Endpoint
-
-The NetBox MCP server is available at:
-
-```text
-http://host.docker.internal:8000/mcp
-```
-
-No authentication token or headers are needed. Connect your MCP client directly to this endpoint.
-
-### Verify the server is reachable
+Use this exact command to run the server locally:
 
 ```bash
-curl -s http://host.docker.internal:8000/mcp
+pipx run uv --directory /sandbox/netbox-mcp-server/ run netbox-mcp-server
 ```
 
-## Connecting with mcp-remote
+## Required Environment
 
-Use `mcp-remote` to bridge the HTTP MCP endpoint for clients that require a local stdio MCP process.
+Set these before launching the server process:
 
 ```bash
-mcp-remote http://host.docker.internal:8000/mcp --transport http-only --allow-http
+export NETBOX_URL="https://netbox.example.com/"
+export NETBOX_TOKEN="<your-api-token>"
 ```
 
-If `mcp-remote` is not installed globally:
+## Supported Tools
 
-```bash
-npx -y mcp-remote http://host.docker.internal:8000/mcp --transport http-only --allow-http
-```
+- `get_objects`: Retrieve NetBox core objects by object type and filters.
+- `get_object_by_id`: Retrieve detailed data for a specific object by ID.
+- `get_changelogs`: Retrieve audit trail and change history entries by filters.
 
-No authentication headers are needed. The `--transport http-only` flag prevents `mcp-remote` from attempting an SSE upgrade, and `--allow-http` permits the non-TLS local endpoint.
+The server supports core NetBox object types. Plugin-defined object types are not guaranteed to be available.
 
-## Tools
+## Object Model Hints
 
-| Tool | Description |
-| --- | --- |
-| `get_objects` | Retrieves NetBox core objects based on their type and filters. |
-| `get_object_by_id` | Gets detailed information about a specific NetBox object by its ID. |
-| `get_changelogs` | Retrieves change history records (audit trail) based on filters. |
+Use these model families as object-type hints when building `get_objects` filters.
 
-Note: the set of supported object types is explicitly defined and limited to the core NetBox objects for now, and won't work with object types from plugins.
+| Domain | Typical object types to query first | Common filter hints |
+| --- | --- | --- |
+| `dcim` | `sites`, `locations`, `racks`, `devices`, `device_types`, `interfaces`, `cables` | `name`, `site`, `location`, `status`, `role`, `device_type`, `tag` |
+| `ipam` | `prefixes`, `ip_addresses`, `vlans`, `vrfs`, `asns`, `route_targets` | `prefix`, `address`, `vlan_id`, `vrf`, `status`, `tenant`, `role` |
+| `virtualization` | `clusters`, `cluster_groups`, `cluster_types`, `virtual_machines`, `vm_interfaces` | `name`, `cluster`, `site`, `status`, `tenant`, `tag` |
+| `circuits` | `providers`, `circuits`, `circuit_terminations`, `provider_networks` | `provider`, `cid`, `status`, `site`, `type`, `tenant` |
+| `tenancy` | `tenants`, `tenant_groups`, `contacts`, `contact_groups` | `name`, `slug`, `group`, `tenant`, `tag` |
+| `wireless` | `wireless_lans`, `wireless_links` | `ssid`, `site`, `status`, `tenant`, `tag` |
+| `vpn` | `tunnels`, `tunnel_groups`, `ike_policies`, `ipsec_policies` | `name`, `group`, `status`, `tenant`, `tag` |
 
-No other tools are available, and direct REST calls to the NetBox API outside of these tools are not possible.
+When in doubt, start in `dcim` for physical inventory questions and `ipam` for addressing questions, then pivot to related domains.
 
-## Operator Guidelines
+## Capability Notes
 
-- Use MCP tools exclusively; do not fall back to `curl`, `fetch`, `wget`, or direct REST calls against NetBox.
-- If the MCP service is unavailable or returns an error, stop and report the failure instead of attempting a side-channel API call.
-- Prefer read operations first: search, list, and detail retrieval before proposing or applying writes.
-- Treat this server as read-only access to the NetBox source of truth.
-- Use field filtering when available to reduce token usage on large object collections.
-- Scope lookups narrowly by site, tenant, role, device name, prefix, VRF, or tag to avoid noisy results.
-- Be explicit about whether you are reading DCIM objects, IPAM objects, virtualization objects, or tenancy data.
-- Do not assume plugin-defined NetBox object types are available; this server is limited to supported core NetBox objects.
-- Use changelog queries when the user asks who changed an object or when a change happened.
+- Read-only server behavior is expected.
+- Field filtering is supported for token-efficient responses when available through tool parameters.
+- Changelog access is useful for who-changed-what analysis and timeline reconstruction.
+
+## Usage Guidelines
+
+- Use MCP tools only. Do not bypass the server with direct REST calls from the agent.
+- Start with narrow filters (site, tenant, role, prefix, VRF, name, status) to reduce noise.
+- Prefer list and detail retrieval before conclusions.
+- For history questions, include a bounded time window and relevant object scope.
+- If a query returns no results, report that clearly and suggest a refined filter.
 
 ## Typical Workflows
 
-### Inventory lookup
+### Inventory Lookup
 
-1. Search for the site, rack, or device.
-2. Retrieve device details, role, platform, tenant, and status.
-3. Inspect interfaces, front and rear ports, cables, or connected peers.
-4. Summarize the current state and any missing data.
+1. Use `get_objects` to find target devices, sites, or racks.
+2. Use `get_object_by_id` for full object context.
+3. Summarize status, ownership, platform, and relationships.
 
-### IPAM investigation
+### IPAM Investigation
 
-1. Search for the prefix, IP address, VLAN, or VRF.
-2. Retrieve parent and child prefixes, allocations, and assignments.
-3. Check related interfaces, devices, and tenants.
-4. Summarize ownership, utilization, and likely next action.
+1. Use `get_objects` to locate prefixes, IP addresses, VLANs, or VRFs.
+2. Inspect allocation and assignment relationships.
+3. Summarize utilization and likely next actions.
 
-### Audit trail lookup
+### Audit Trail Analysis
 
-1. Read the current object state first.
-2. Retrieve changelog records for the relevant object, site, or device.
-3. Correlate object history with current state.
-4. Summarize who changed what, when it changed, and what follow-up to validate.
-
-### Data quality triage
-
-1. Find objects with missing owners, inconsistent status, or incomplete addressing.
-2. Correlate related objects across DCIM and IPAM.
-3. Highlight what is authoritative versus what appears inconsistent.
-4. Recommend the minimum corrective update.
+1. Identify object scope first.
+2. Use `get_changelogs` for the relevant period.
+3. Summarize actor, timestamp, and change type.
 
 ## Response Style
 
-- Report facts first, including object names, IDs, and scopes.
-- State whether the result comes from DCIM, IPAM, virtualization, circuits, or tenancy data.
-- Call out ambiguity, missing relationships, and stale-looking records explicitly.
-- When using changelog data, include the time window and affected objects.
-- End with concrete next actions or validation steps.
+- Facts first: object names, IDs, status, and scope.
+- State data domain explicitly: DCIM, IPAM, or changelog.
+- Call out uncertainty and missing context.
+- End with concrete next checks or follow-up queries.
