@@ -43,23 +43,23 @@ npx -y mcp-remote https://api.thousandeyes.com/mcp \
 
 ### Required
 
-- `TE_TOKEN`: ThousandEyes API bearer token used for MCP authentication.
+- `TE_TOKEN`: ThousandEyes API bearer token used for MCP authentication. Set this in the `.env` file.
 
 ### Optional
 
-- `THOUSANDEYES_MCP_URL`: Override endpoint URL. Default is `https://api.thousandeyes.com/mcp`.
-- `MCP_REMOTE_BIN`: Absolute path or command name for the executable. Default is `mcp-remote`.
-- `TE_ACCOUNT_GROUP_ID`: Account group scope (`aid`) for multi-group org workflows.
-- `HTTPS_PROXY`: Proxy URL for outbound HTTPS requests when required by network policy.
-- `HTTP_PROXY`: Proxy URL for environments where HTTP proxy routing is used.
-- `NO_PROXY`: Comma-separated hosts that should bypass proxy.
+- `THOUSANDEYES_MCP_URL`: Override endpoint URL. Default is `https://api.thousandeyes.com/mcp`. Set in the `.env` file when needed.
+- `MCP_REMOTE_BIN`: Absolute path or command name for the executable. Default is `mcp-remote`. Set in the `.env` file when needed.
+- `TE_ACCOUNT_GROUP_ID`: Account group scope (`aid`) for multi-group org workflows. Set in the `.env` file when needed.
+- `HTTPS_PROXY`: Proxy URL for outbound HTTPS requests when required by network policy. Set in the `.env` file when needed.
+- `HTTP_PROXY`: Proxy URL for environments where HTTP proxy routing is used. Set in the `.env` file when needed.
+- `NO_PROXY`: Comma-separated hosts that should bypass proxy. Set in the `.env` file when needed.
 
 ## Setup Pattern
 
 ```bash
-export TE_TOKEN="<your_thousandeyes_token>"
-export THOUSANDEYES_MCP_URL="https://api.thousandeyes.com/mcp"  # optional
-export MCP_REMOTE_BIN="mcp-remote"                                # optional
+echo 'TE_TOKEN="<your_thousandeyes_token>"' >> .env
+echo 'THOUSANDEYES_MCP_URL="https://api.thousandeyes.com/mcp"' >> .env  # optional
+echo 'MCP_REMOTE_BIN="mcp-remote"' >> .env                          # optional
 
 "${MCP_REMOTE_BIN}" "${THOUSANDEYES_MCP_URL:-https://api.thousandeyes.com/mcp}" \
   --header "Authorization: Bearer ${TE_TOKEN}"
@@ -68,7 +68,7 @@ export MCP_REMOTE_BIN="mcp-remote"                                # optional
 ## Operator Guidelines
 
 - Use only ThousandEyes API v7 semantics and endpoints; do not use v6 or earlier API versions.
-- Always use MCP tools exclusively; never fall back to `curl`, `fetch`, `wget`, or direct HTTP client calls to the ThousandEyes API.
+- Always use MCP tools exclusively; never fall back to `curl`, `fetch`, `wget`, `web_fetch`, or direct HTTP client calls to the ThousandEyes API.
 - If MCP tools are unavailable or return an error, stop and report the failure — do not attempt to replicate the call through any other mechanism.
 - Prefer read-oriented calls first: list tests, list alerts, list events, get details.
 - Use bounded time windows for incident analysis to reduce noise.
