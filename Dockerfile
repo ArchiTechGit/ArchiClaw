@@ -142,7 +142,7 @@ providers = { \
 config = { \
     'agents': {'defaults': {'model': {'primary': primary_model_ref}}}, \
     'models': {'mode': 'merge', 'providers': providers}, \
-    'channels': dict({'defaults': {'configWrites': False}}, **_ch_cfg), \
+    'channels': dict({'defaults': {}}, **_ch_cfg), \
     'gateway': { \
         'mode': 'local', \
         'controlUi': { \
