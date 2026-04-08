@@ -433,6 +433,7 @@ describe("CLI dispatch", () => {
     const localBin = path.join(home, "bin");
     const registryDir = path.join(home, ".nemoclaw");
     const openshellLog = path.join(home, "openshell.log");
+    const bashLog = path.join(home, "bash.log");
     fs.mkdirSync(localBin, { recursive: true });
     fs.mkdirSync(registryDir, { recursive: true });
     fs.writeFileSync(
@@ -461,6 +462,16 @@ describe("CLI dispatch", () => {
         '  echo "transport error: gateway unavailable" >&2',
         "  exit 1",
         "fi",
+        "exit 0",
+      ].join("\n"),
+      { mode: 0o755 },
+    );
+    fs.writeFileSync(
+      path.join(localBin, "bash"),
+      [
+        "#!/bin/sh",
+        `log_file=${JSON.stringify(bashLog)}`,
+        'printf \'%s\\n\' "$*" >> "$log_file"',
         "exit 0",
       ].join("\n"),
       { mode: 0o755 },

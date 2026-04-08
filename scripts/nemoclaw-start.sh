@@ -12,6 +12,9 @@
 # Optional env:
 #   NVIDIA_API_KEY                API key for NVIDIA-hosted inference
 #   CHAT_UI_URL                   Browser origin that will access the forwarded dashboard
+#   THOUSANDEYES_API_TOKEN        Runtime bearer token for the ThousandEyes MCP server
+#   THOUSANDEYES_MCP_URL          Optional ThousandEyes MCP URL override
+#                                 (default: https://api.thousandeyes.com/mcp)
 #   NEMOCLAW_DISABLE_DEVICE_AUTH  Build-time only. Set to "1" to skip device-pairing auth
 #                                 (development/headless). Has no runtime effect — openclaw.json
 #                                 is baked at image build and verified by hash at startup.
@@ -96,6 +99,9 @@ NEMOCLAW_CMD=("$@")
 CHAT_UI_URL="${CHAT_UI_URL:-http://127.0.0.1:18789}"
 PUBLIC_PORT=18789
 OPENCLAW="$(command -v openclaw)" # Resolve once, use absolute path everywhere
+OPENCLAW_BASE_CONFIG="/sandbox/.openclaw/openclaw.json"
+export OPENCLAW_RUNTIME_CONFIG="/sandbox/.openclaw/openclaw.runtime.json5"
+export OPENCLAW_RUNTIME_OVERLAY="/sandbox/.openclaw/openclaw.runtime.overlay.json5"
 
 # ── Config integrity check ──────────────────────────────────────
 # The config hash was pinned at build time. If it doesn't match,
@@ -110,7 +116,7 @@ verify_config_integrity() {
   if ! (cd /sandbox/.openclaw && sha256sum -c "$hash_file" --status 2>/dev/null); then
     echo "[SECURITY] openclaw.json integrity check FAILED — config may have been tampered with" >&2
     echo "[SECURITY] Expected hash: $(cat "$hash_file")" >&2
-    echo "[SECURITY] Actual hash:   $(sha256sum /sandbox/.openclaw/openclaw.json)" >&2
+    echo "[SECURITY] Actual hash:   $(sha256sum "$OPENCLAW_BASE_CONFIG")" >&2
     return 1
   fi
 }
@@ -308,8 +314,20 @@ configure_messaging_channels() {
   return 0
 }
 
+write_runtime_mcp_config() {
+  if [ -z "${THOUSANDEYES_API_TOKEN:-}" ]; then
+    if [ -n "${THOUSANDEYES_MCP_URL:-}" ]; then
+      echo "[gateway] THOUSANDEYES_MCP_URL ignored because THOUSANDEYES_API_TOKEN is unset" >&2
+    fi
+    return
+  fi
+
+  echo "[gateway] THOUSANDEYES_API_TOKEN is set, but this OpenClaw version rejects root 'mcp' config keys" >&2
+  echo "[gateway] ThousandEyes MCP overlay disabled to avoid startup failure (Unrecognized key: \"mcp\")" >&2
+  echo "[gateway] Keep THOUSANDEYES_API_TOKEN for future support; no runtime MCP overlay is written" >&2
+}
+
 # Print the local and remote dashboard URLs, appending the auth token if available.
-print_dashboard_urls() {
   local token chat_ui_base local_url remote_url
 
   token="$(_read_gateway_token)"
@@ -526,6 +544,7 @@ if [ "$(id -u)" -ne 0 ]; then
   install_configure_guard
   configure_messaging_channels
   validate_openclaw_symlinks
+  write_runtime_mcp_config
 
   # Ensure writable state directories exist and are owned by the current user.
   # The Docker build (Dockerfile) sets this up correctly, but the native curl
@@ -625,6 +644,7 @@ install_configure_guard
 # Must run AFTER integrity check (to detect build-time tampering) and
 # BEFORE chattr +i (which locks the config permanently).
 configure_messaging_channels
+write_runtime_mcp_config
 
 # Write auth profile as sandbox user (needs writable .openclaw-data)
 gosu sandbox bash -c "$(declare -f write_auth_profile); write_auth_profile"

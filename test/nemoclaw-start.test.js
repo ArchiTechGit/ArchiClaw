@@ -274,3 +274,38 @@ describe("nemoclaw-start signal handling", () => {
     expect(src).toMatch(/AUTO_PAIR_PID=\$!/);
   });
 });
+
+describe("nemoclaw-start ThousandEyes MCP guard", () => {
+  const src = fs.readFileSync(START_SCRIPT, "utf-8");
+
+  it("documents ThousandEyes runtime env vars in the script header", () => {
+    const header = src.split("set -euo pipefail")[0];
+
+    expect(header).toMatch(/THOUSANDEYES_API_TOKEN/);
+    expect(header).toMatch(/THOUSANDEYES_MCP_URL/);
+  });
+
+  it("keeps runtime overlay paths declared (reserved for future MCP support)", () => {
+    expect(src).toContain('OPENCLAW_RUNTIME_CONFIG="/sandbox/.openclaw/openclaw.runtime.json5"');
+    expect(src).toContain(
+      'OPENCLAW_RUNTIME_OVERLAY="/sandbox/.openclaw/openclaw.runtime.overlay.json5"',
+    );
+    expect(src).not.toMatch(/openclaw mcp set/);
+  });
+
+  it("warns that root mcp config is unsupported and skips overlay writes", () => {
+    expect(src).toMatch(/rejects root 'mcp' config keys/);
+    expect(src).toMatch(/ThousandEyes MCP overlay disabled to avoid startup failure/);
+    expect(src).toMatch(/no runtime MCP overlay is written/);
+  });
+
+  it("does not write unsupported mcp server config into runtime overlay", () => {
+    expect(src).not.toMatch(/\bmcp:\s*{/);
+    expect(src).not.toMatch(/OPENCLAW_CONFIG_PATH="\$OPENCLAW_RUNTIME_CONFIG"/);
+  });
+
+  it("enables the runtime MCP overlay in both root and non-root startup paths", () => {
+    const calls = src.match(/write_runtime_mcp_config/g) || [];
+    expect(calls.length).toBeGreaterThanOrEqual(3); // definition + 2 call sites
+  });
+});
