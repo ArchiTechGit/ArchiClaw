@@ -1,6 +1,6 @@
 ---
 name: thousandeyes
-description: Cisco ThousandEyes skill using the official hosted MCP server via mcp-remote. Use for test inventory, path analysis, events, alerts, outage triage, endpoint metrics, and network performance investigations.
+description: Cisco ThousandEyes skill using the "thousandeyes" MCP server already configured in OpenClaw. Use for test inventory, path analysis, events, alerts, outage triage, endpoint metrics, and network performance investigations.
 version: 1.0.0
 tags: [cisco, thousandeyes, mcp, network-monitoring, path-visualization, alerts, outages]
 ---
@@ -11,59 +11,15 @@ tags: [cisco, thousandeyes, mcp, network-monitoring, path-visualization, alerts,
 
 Use this skill when users need operational visibility from ThousandEyes, including test status, event timelines, alert context, outage correlation, endpoint health, and path/BGP analysis.
 
-## Official MCP Server
+## MCP Server
 
+This skill uses the `thousandeyes` MCP server already defined in OpenClaw. No additional setup or mcp-remote configuration is required.
+
+- Server name: `thousandeyes`
 - Repository: CiscoDevNet/ThousandEyes-MCP-Server-official
 - Repository URL: [CiscoDevNet/ThousandEyes-MCP-Server-official](https://github.com/CiscoDevNet/ThousandEyes-MCP-Server-official)
 - Hosted MCP endpoint: [https://api.thousandeyes.com/mcp](https://api.thousandeyes.com/mcp)
-- Transport: Streamable HTTP via `mcp-remote`
-- Authentication: Bearer token in the Authorization header
-
-## mcp-remote Invocation
-
-Use the `mcp-remote` executable to bridge the remote MCP endpoint.
-
-Example command:
-
-```bash
-mcp-remote https://api.thousandeyes.com/mcp \
-  --transport http-only \
-  --header "Authorization: Bearer ${TE_TOKEN}"
-```
-
-If `mcp-remote` is not installed globally, use:
-
-```bash
-npx -y mcp-remote https://api.thousandeyes.com/mcp \
-  --transport http-only \
-  --header "Authorization: Bearer ${TE_TOKEN}"
-```
-
-## Environment Variables
-
-### Required
-
-- `TE_TOKEN`: ThousandEyes API bearer token used for MCP authentication. Set this in the `.env` file.
-
-### Optional
-
-- `THOUSANDEYES_MCP_URL`: Override endpoint URL. Default is `https://api.thousandeyes.com/mcp`. Set in the `.env` file when needed.
-- `MCP_REMOTE_BIN`: Absolute path or command name for the executable. Default is `mcp-remote`. Set in the `.env` file when needed.
-- `TE_ACCOUNT_GROUP_ID`: Account group scope (`aid`) for multi-group org workflows. Set in the `.env` file when needed.
-- `HTTPS_PROXY`: Proxy URL for outbound HTTPS requests when required by network policy. Set in the `.env` file when needed.
-- `HTTP_PROXY`: Proxy URL for environments where HTTP proxy routing is used. Set in the `.env` file when needed.
-- `NO_PROXY`: Comma-separated hosts that should bypass proxy. Set in the `.env` file when needed.
-
-## Setup Pattern
-
-```bash
-echo 'TE_TOKEN="<your_thousandeyes_token>"' >> .env
-echo 'THOUSANDEYES_MCP_URL="https://api.thousandeyes.com/mcp"' >> .env  # optional
-echo 'MCP_REMOTE_BIN="mcp-remote"' >> .env                          # optional
-
-"${MCP_REMOTE_BIN}" "${THOUSANDEYES_MCP_URL:-https://api.thousandeyes.com/mcp}" \
-  --header "Authorization: Bearer ${TE_TOKEN}"
-```
+- Authentication: `TE_TOKEN` bearer token loaded from the `.env` file
 
 ## Operator Guidelines
 
