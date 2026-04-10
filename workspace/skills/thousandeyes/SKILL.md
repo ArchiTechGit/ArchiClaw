@@ -1,6 +1,6 @@
 ---
 name: thousandeyes
-description: Cisco ThousandEyes skill using the "thousandeyes" MCP server already configured in OpenClaw. Use for test inventory, path analysis, events, alerts, outage triage, endpoint metrics, and network performance investigations.
+description: Cisco ThousandEyes skill using the official public "thousandeyes" MCP server.  Use for test inventory, path analysis, events, alerts, outage triage, endpoint metrics, and network performance investigations.
 version: 1.0.0
 tags: [cisco, thousandeyes, mcp, network-monitoring, path-visualization, alerts, outages]
 ---
@@ -13,13 +13,23 @@ Use this skill when users need operational visibility from ThousandEyes, includi
 
 ## MCP Server
 
-This skill uses the `thousandeyes` MCP server already defined in OpenClaw. No additional setup or mcp-remote configuration is required.
+This skill uses the `thousandeyes` official MCP server called through a local mcp-client.js script. No additional setup or mcp-remote configuration is required.
 
 - Server name: `thousandeyes`
 - Repository: CiscoDevNet/ThousandEyes-MCP-Server-official
 - Repository URL: [CiscoDevNet/ThousandEyes-MCP-Server-official](https://github.com/CiscoDevNet/ThousandEyes-MCP-Server-official)
 - Hosted MCP endpoint: [https://api.thousandeyes.com/mcp](https://api.thousandeyes.com/mcp)
 - Authentication: `TE_TOKEN` bearer token loaded from the `.env` file
+
+## OpenClaw Access Pattern
+
+Use the local MCP client script in this workspace to call the ThousandEyes MCP server:
+
+```bash
+workspace/scripts/mcp-client.js --url https://api.thousandeyes.com/mcp --token $TE_TOKEN --method XXXX
+```
+
+Replace `XXXX` with the MCP method you need, such as `tools/list`.
 
 ## Operator Guidelines
 

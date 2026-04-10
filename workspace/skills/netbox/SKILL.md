@@ -13,11 +13,12 @@ Use this skill when users need to query NetBox source-of-truth data through MCP 
 
 ## MCP Server
 
-This skill uses the `netbox` MCP server already defined in OpenClaw.
+This skill uses the `netbox` MCP server called through a local mcp-client.js script. No additional setup or mcp-remote configuration is required.
 
 - GitHub repository: [netboxlabs/netbox-mcp-server](https://github.com/netboxlabs/netbox-mcp-server)
 - Server name: `netbox`
 - Data access model: read-only
+- Authentication: None, configured directly on local MCP server instance
 
 ## OpenClaw Access Pattern
 
