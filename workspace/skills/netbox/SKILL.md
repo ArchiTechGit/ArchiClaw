@@ -1,6 +1,6 @@
 ---
 name: netbox
-description: NetBox MCP skill for read-only DCIM and IPAM access using the official netboxlabs/netbox-mcp-server via local stdio transport.
+description: NetBox MCP skill for read-only DCIM and IPAM access using the "netbox" MCP server already defined in OpenClaw.
 version: 1.0.0
 tags: [netbox, mcp, dcim, ipam, network-automation, inventory, changelog]
 ---
@@ -11,26 +11,13 @@ tags: [netbox, mcp, dcim, ipam, network-automation, inventory, changelog]
 
 Use this skill when users need to query NetBox source-of-truth data through MCP tools, including inventory lookups, IPAM exploration, and change history analysis.
 
-## Reference Implementation
+## MCP Server
+
+This skill uses the `netbox` MCP server already defined in OpenClaw.
 
 - GitHub repository: [netboxlabs/netbox-mcp-server](https://github.com/netboxlabs/netbox-mcp-server)
-- Service model: local MCP server over stdio
+- Server name: `netbox`
 - Data access model: read-only
-
-## Local Launch Command
-
-Use this exact command to run the server locally:
-
-```bash
-pipx run uv --directory /sandbox/netbox-mcp-server/ run netbox-mcp-server
-```
-
-## Required Environment
-
-These environment variables are pre-configured in the `.env` file and will be automatically set when the server launches. **Do not request these credentials from the user.**
-
-- `NETBOX_URL`: The base URL of the NetBox instance
-- `NETBOX_TOKEN`: API authentication token for NetBox access
 
 ## Supported Tools
 
