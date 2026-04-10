@@ -9,7 +9,7 @@ network_policies:
   netbox:
     name: netbox
     endpoints:
-      - host: netboxapp.com
+      - host: "*.netboxapp.com"
         port: 443
         protocol: rest
         enforcement: enforce
