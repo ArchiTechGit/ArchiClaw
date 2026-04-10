@@ -19,6 +19,16 @@ This skill uses the `netbox` MCP server already defined in OpenClaw.
 - Server name: `netbox`
 - Data access model: read-only
 
+## OpenClaw Access Pattern
+
+Use the local MCP client script in this workspace to call the NetBox MCP server:
+
+```bash
+workspace/scripts/mcp-client.js --url http://127.0.0.1:8001 --method XXXX
+```
+
+Replace `XXXX` with the MCP method you need, such as `tools/list`.
+
 ## Supported Tools
 
 - `get_objects`: Retrieve NetBox core objects by object type and filters.
