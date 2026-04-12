@@ -19,17 +19,20 @@ This skill uses the `nexus-dashboard` MCP server from the ArchiTechGit project. 
 - Repository URL: [ArchiTechGit/nexus-dashboard-mcp](https://github.com/ArchiTechGit/nexus-dashboard-mcp)
 - Server name: `nexus-dashboard`
 - Transport support: Streamable HTTP
-- Default HTTP endpoint: `http://nd_mcp_web_api:8444/mcp/sse`
+- Default HTTP endpoint: `http://nd_mcp_web_api:7100/mcp/sse`
+- Authentication: Use `--token $ND_TOKEN` with the local MCP client
 
 ## OpenClaw Access Pattern
 
 Use the local MCP client script in this workspace to call the Nexus Dashboard MCP server:
 
 ```bash
-workspace/scripts/mcp-client.js --url http://nd_mcp_web_api:8444/mcp/sse --method XXXX
+workspace/scripts/mcp-client.js --url http://nd_mcp_web_api:7100/mcp/sse --token $ND_TOKEN --method XXXX
 ```
 
 Replace `XXXX` with the MCP method you need, such as `tools/list`.
+
+Set `ND_TOKEN` in the workspace `.env` file.
 
 ## Operator Guidelines
 
