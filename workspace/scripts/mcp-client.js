@@ -377,42 +377,30 @@ async function readSseUntilResponse(response, requestId) {
     throw new Error("SSE response did not include a readable body");
   }
 
-  const reader = response.body.getReader();
-  const decoder = new TextDecoder("utf-8");
-  let buffer = "";
+  const stream = {
+    reader: response.body.getReader(),
+    decoder: new TextDecoder("utf-8"),
+    buffer: "",
+  };
 
   while (true) {
-    const { value, done } = await reader.read();
-    if (done) break;
+    const event = await readNextSseEvent(stream);
+    if (!event) break;
 
-    buffer += decoder.decode(value, { stream: true });
+    let message;
+    try {
+      message = JSON.parse(event.data);
+    } catch {
+      continue;
+    }
 
-    while (true) {
-      const sep = buffer.indexOf("\n\n");
-      if (sep === -1) break;
-
-      const eventBlock = buffer.slice(0, sep);
-      buffer = buffer.slice(sep + 2);
-
-      const dataLines = eventBlock
-        .split("\n")
-        .filter((line) => line.startsWith("data:"))
-        .map((line) => line.slice(5).trim())
-        .filter(Boolean);
-
-      if (dataLines.length === 0) continue;
-
-      const dataPayload = dataLines.join("\n");
-      let message;
-      try {
-        message = JSON.parse(dataPayload);
-      } catch {
-        continue;
-      }
-
-      if (typeof message === "object" && message !== null && "id" in message && message.id === requestId) {
-        return message;
-      }
+    if (
+      typeof message === "object" &&
+      message !== null &&
+      "id" in message &&
+      String(message.id) === String(requestId)
+    ) {
+      return message;
     }
   }
 
@@ -553,13 +541,19 @@ async function main() {
   } catch (error) {
     if (!shouldTryLegacyFallback(error)) throw error;
 
-    const legacyOutput = await runLegacyHttpSseFlow({
-      args,
-      params,
-      additionalHeaders,
-    });
+    try {
+      const legacyOutput = await runLegacyHttpSseFlow({
+        args,
+        params,
+        additionalHeaders,
+      });
 
-    console.log(JSON.stringify(legacyOutput, null, 2));
+      console.log(JSON.stringify(legacyOutput, null, 2));
+    } catch (legacyError) {
+      throw new Error(
+        `Streamable HTTP failed: ${error.message}. Legacy fallback failed: ${legacyError.message}`
+      );
+    }
   }
 }
 
