@@ -19,7 +19,7 @@ This skill uses the `catalyst-center` MCP server from the ArchiTechGit project.
 - Repository URL: [archiTechGit/catalyst-center-mcp-v2](https://github.com/archiTechGit/catalyst-center-mcp-v2)
 - Server name: `catalyst-center`
 - Transport support: HTTP/Streamable HTTP
-- Default HTTP endpoint: `http://catc_mcp_web_api:7101`
+- Default HTTP endpoint: `http://catc_mcp_web_api:7101/mcp/sse`
 - Authentication: Use `--token $CATC_TOKEN` with the local MCP client
 
 ## OpenClaw Access Pattern
@@ -27,7 +27,7 @@ This skill uses the `catalyst-center` MCP server from the ArchiTechGit project.
 Use the local MCP client script in this workspace to call the Catalyst Center MCP service:
 
 ```bash
-workspace/scripts/mcp-client.js --url http://catc_mcp_web_api:7101 --token $CATC_TOKEN --method XXXX
+workspace/scripts/mcp-client.js --url http://catc_mcp_web_api:7101/mcp/sse --token $CATC_TOKEN --method XXXX
 ```
 
 Replace `XXXX` with the MCP method you need, such as `tools/list`.
