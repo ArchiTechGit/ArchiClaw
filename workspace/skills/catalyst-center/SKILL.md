@@ -15,35 +15,24 @@ Use this skill when users need Cisco Catalyst Center operations through MCP tool
 
 This skill uses the `catalyst-center` MCP server from the ArchiTechGit project.
 
-- Repository: ArchiTechGit/catalyst-center-mcp
-- Repository URL: [ArchiTechGit/catalyst-center-mcp](https://github.com/ArchiTechGit/catalyst-center-mcp)
+- Repository: archiTechGit/catalyst-center-mcp-v2
+- Repository URL: [archiTechGit/catalyst-center-mcp-v2](https://github.com/archiTechGit/catalyst-center-mcp-v2)
 - Server name: `catalyst-center`
 - Transport support: HTTP/Streamable HTTP
-- Local MCP endpoint: `http://catc_mcp:8003/mcp`
+- Default HTTP endpoint: `http://catc_mcp_web_api:7100/mcp/sse`
+- Authentication: Use `--token $CATC_TOKEN` with the local MCP client
 
 ## OpenClaw Access Pattern
 
 Use the local MCP client script in this workspace to call the Catalyst Center MCP service:
 
 ```bash
-workspace/scripts/mcp-client.js --url http://catc_mcp:8003/mcp --method XXXX
+workspace/scripts/mcp-client.js --url http://catc_mcp_web_api:7100/mcp/sse --token $CATC_TOKEN --method XXXX
 ```
 
 Replace `XXXX` with the MCP method you need, such as `tools/list`.
 
-## Environment Variables
-
-### Required
-
-- `CATC_URL`: Catalyst Center base URL including `https://`.
-- `CATC_USERNAME`: Catalyst Center account username with API access.
-- `CATC_PASSWORD`: Catalyst Center account password.
-
-### Optional
-
-- `CATC_VERIFY_SSL`: SSL verification toggle (`true`/`false`).
-- `MCP_HOST`: MCP service bind host.
-- `MCP_PORT`: MCP service bind port.
+Set `CATC_TOKEN` in the workspace `.env` file.
 
 ## Operator Guidelines
 
