@@ -19,14 +19,14 @@ This skill uses the `terraform` MCP server provided by HashiCorp Terraform MCP S
 - Repository URL: [hashicorp/terraform-mcp-server](https://github.com/hashicorp/terraform-mcp-server)
 - Server name: `terraform`
 - Transport support: stdio and Streamable HTTP
-- Default HTTP endpoint: `http://tfe_mcp:8080/mcp`
+- Default HTTP endpoint: `http://tfe_mcp:8002/mcp`
 
 ## OpenClaw Access Pattern
 
 Use the local MCP client script in this workspace to call the Terraform MCP server:
 
 ```bash
-workspace/scripts/mcp-client.js --url http://tfe_mcp:8080/mcp --method XXXX
+workspace/scripts/mcp-client.js --url http://tfe_mcp:8002/mcp --method XXXX
 ```
 
 Replace `XXXX` with the MCP method you need, such as `tools/list`.
