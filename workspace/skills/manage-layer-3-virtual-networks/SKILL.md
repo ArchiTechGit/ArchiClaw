@@ -9,6 +9,10 @@ description: Create, update, or destroy Terraform No-Code workspaces that use th
 
 Use this skill to manage Terraform No-Code workspaces backed by the `nc-l3vn` module. Gather the user's intent, collect the required variables, ask whether any optional variables should be set for this workspace, summarize the plan clearly, and only then perform the requested workspace action.
 
+## Critical constraint
+
+**This skill must only use No-Code workspace tools.** The `nc-l3vn` module is deployed exclusively through Terraform No-Code workflows. Creating a standard workspace and then setting variables separately will not work and must never be attempted — not as a fallback, not as a workaround. If the No-Code tools are unavailable, stop and report the problem.
+
 ## Workflow
 
 ### 1. Confirm the requested lifecycle action
@@ -104,23 +108,22 @@ For destructive actions, explicitly state that the action may remove managed inf
 
 ### 8. Execute the Terraform action safely
 
-Use Terraform MCP tools only.
+Use Terraform MCP tools only. All create and update operations **must** use the No-Code workspace tools exclusively.
 
-Preferred operation patterns:
+**Hard rule: never fall back to creating a standard workspace and then setting variables separately. This will not work with the `nc-l3vn` module. If the No-Code workspace tools are unavailable, stop and report the limitation — do not attempt any alternative path.**
 
 #### Create
 
 1. Confirm target organization.
-2. Create the No-Code workspace for the `nc-l3vn` module.
-3. Ensure required variables are populated.
-4. Apply optional variables only if the user requested them.
-5. Re-read workspace variables or details to verify the final state.
+2. Use the **No-Code workspace create tool** to create the workspace for the `nc-l3vn` module. Do not use the generic workspace create tool.
+3. Supply all required and user-requested optional variables in the No-Code create call.
+4. Re-read workspace variables or details to verify the final state.
 
 #### Update
 
 1. Read current workspace details and variables first.
 2. Show the variables that will change.
-3. Update only the requested fields.
+3. Use the **No-Code workspace update tool** to apply changes. Do not use generic variable-set tools as a substitute.
 4. Re-read the workspace variables after the change.
 
 #### Destroy
@@ -131,7 +134,7 @@ Preferred operation patterns:
 4. Use the appropriate Terraform MCP workflow for deletion or destructive run handling.
 5. Report completion and any follow-up state.
 
-If a needed write-capable tool is unavailable, stop and report the limitation instead of improvising with non-MCP methods.
+If any No-Code workspace tool is unavailable or returns an error, stop and report the failure. Do not attempt workarounds using standard workspace or variable tools.
 
 ## Variable handling rules
 
