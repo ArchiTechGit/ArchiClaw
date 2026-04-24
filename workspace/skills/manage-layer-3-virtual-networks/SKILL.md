@@ -110,14 +110,17 @@ For destructive actions, explicitly state that the action may remove managed inf
 
 Use Terraform MCP tools only. All create and update operations **must** use the No-Code workspace tools exclusively.
 
-**Hard rule: never fall back to creating a standard workspace and then setting variables separately. This will not work with the `nc-l3vn` module. If the No-Code workspace tools are unavailable, stop and report the limitation — do not attempt any alternative path.**
+**Hard rule: if `create_no_code_workspace` is unavailable or fails, do NOT fall back to `create_workspace` followed by `create_workspace_variable`. That approach will not work with the `nc-l3vn` module. Instead, notify the user that the No-Code tool is unavailable and stop the current workflow.**
 
 #### Create
 
 1. Confirm target organization.
-2. Use the **No-Code workspace create tool** to create the workspace for the `nc-l3vn` module. Do not use the generic workspace create tool.
-3. Supply all required and user-requested optional variables in the No-Code create call.
-4. Re-read workspace variables or details to verify the final state.
+2. Call `create_no_code_workspace` for the `nc-l3vn` module. This is the only permitted tool for this step.
+3. If `create_no_code_workspace` is unavailable or returns an error:
+   - Notify the user: "The `create_no_code_workspace` tool is unavailable. Cannot create this workspace. Please check the Terraform MCP server connection."
+   - Stop. Do not call `create_workspace` or `create_workspace_variable` under any circumstances.
+4. Supply all required and user-requested optional variables in the `create_no_code_workspace` call.
+5. Re-read workspace variables or details to verify the final state.
 
 #### Update
 
