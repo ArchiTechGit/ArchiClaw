@@ -13,6 +13,8 @@ Use this skill to manage Terraform No-Code workspaces backed by the `nc-l3vn` mo
 
 **This skill must only use No-Code workspace tools.** The `nc-l3vn` module is deployed exclusively through Terraform No-Code workflows. Creating a standard workspace and then setting variables separately will not work and must never be attempted — not as a fallback, not as a workaround. If the No-Code tools are unavailable, stop and report the problem.
 
+**Hard rule: if `create_no_code_workspace` is unavailable or fails, do NOT fall back to `create_workspace` followed by `create_workspace_variable`. That approach will not work with the `nc-l3vn` module. Instead, notify the user that the No-Code tool is unavailable and stop the current workflow.**
+
 ## Workflow
 
 ### 1. Confirm the requested lifecycle action
@@ -109,8 +111,6 @@ For destructive actions, explicitly state that the action may remove managed inf
 ### 8. Execute the Terraform action safely
 
 Use Terraform MCP tools only. All create and update operations **must** use the No-Code workspace tools exclusively.
-
-**Hard rule: if `create_no_code_workspace` is unavailable or fails, do NOT fall back to `create_workspace` followed by `create_workspace_variable`. That approach will not work with the `nc-l3vn` module. Instead, notify the user that the No-Code tool is unavailable and stop the current workflow.**
 
 #### Create
 
